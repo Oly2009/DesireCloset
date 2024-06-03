@@ -1,7 +1,39 @@
 <?php
 session_start();
 require_once '../config/conexion.php';
-require_once '../config/email.php';
+require '../vendor/autoload.php'; // Asegúrate de que esta ruta es correcta
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+function enviarEmail($to, $subject, $message) {
+    $mail = new PHPMailer(true);
+
+    try {
+        // Configuración del servidor SMTP
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'olydaw2022@gmail.com'; // Tu correo de Gmail
+        $mail->Password = 'mihaila1612A*'; // Tu contraseña de Gmail
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+
+        // Remitente y destinatarios
+        $mail->setFrom('olydaw2022@gmail.com', 'DesireCloset');
+        $mail->addAddress($to);
+
+        // Contenido del correo
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $message;
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        return "Error al enviar el correo: {$mail->ErrorInfo}";
+    }
+}
 
 if (!isset($_SESSION['user_id'])) {
     echo "Debes iniciar sesión para realizar una compra.";
@@ -56,9 +88,13 @@ try {
                  . "Saludos,<br>DesireCloset";
 
         // Enviar el correo
-        enviarEmail($to, $subject, $message);
+        $resultado = enviarEmail($to, $subject, $message);
 
-        echo "Se ha enviado un correo al vendedor. Pronto se pondrá en contacto contigo.";
+        if ($resultado === true) {
+            echo "Se ha enviado un correo al vendedor. Pronto se pondrá en contacto contigo.";
+        } else {
+            echo $resultado;
+        }
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();

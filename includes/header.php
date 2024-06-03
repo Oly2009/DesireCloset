@@ -19,7 +19,7 @@ $isAdmin = $isLoggedIn && isset($_SESSION['role']) && $_SESSION['role'] == 'admi
 </head>
 <body>
     <header class="py-3" style="background-color: #000000;">
-        <div class="header container">
+        <div class="container">
             <div class="row align-items-center justify-content-between">
                 <div class="col-lg-8 d-flex align-items-center">
                     <a href="#" class="navbar-brand">
@@ -78,6 +78,7 @@ $isAdmin = $isLoggedIn && isset($_SESSION['role']) && $_SESSION['role'] == 'admi
                     <li class="nav-item"><a href="../vista/sujetadores.php" class="nav-link fs-4">Sujetadores</a></li>
                     <li class="nav-item"><a href="../vista/fotosdepie.php" class="nav-link fs-4">Fotos de pies</a></li>
                     <li class="nav-item"><a href="../vista/juguetessexuales.php" class="nav-link fs-4">Juguetes Sexuales</a></li>
+                    <li class="nav-item"><a href="../vista/otros.php" class="nav-link fs-4">Otros</a></li>
                     <?php if ($isAdmin): ?>
                         <li class="nav-item"><a href="admin.php" class="nav-link fs-4">Panel de Admin</a></li>
                     <?php endif; ?>
@@ -85,3 +86,5 @@ $isAdmin = $isLoggedIn && isset($_SESSION['role']) && $_SESSION['role'] == 'admi
             </div>
         </div>
     </nav>
+</body>
+</html>

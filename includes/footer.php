@@ -13,7 +13,7 @@
                 <div class="footer-item">
                     <h4 class="mb-4 text-white">Política de privacidad</h4>
                     <ul>
-                        <li><a href="politicaCookies.php">Política de cookies</a></li>
+                        <li><a href="uso.php">Condiciones de uso</a></li>
                         <li><a href="condiciones.php">Terminos y Condiciones Legales</a></li>
                         <li><a href="quienes.php">¿Quienes Somos?</a></li>
                     </ul>

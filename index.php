@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DesireCloset</title>
+    <link rel="icon" href="./assets/img/logo.jpg" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="./assets/css/style.css" rel="stylesheet">
@@ -11,15 +12,16 @@
 <body>
 
 <!-- CONTENIDO -->
-<div class="index container-fluid d-flex align-items-center justify-content-center min-vh-100 ">
-    <div class="row justify-content-center w-auto ">
-        <div class="col-lg-12 col-md-10 col-sm-12 ">
-            <div class="card custom-card bg-black">
+<div class="index container-fluid d-flex align-items-center justify-content-center min-vh-100">
+    <div class="row justify-content-center w-auto">
+        <div class="col-lg-12 col-md-10 col-sm-12">
+            <div class="card custom-card bg-black text-center">
                 <div class="card-body">
+                    <img src="./assets/img/logo.jpg" alt="Logo" class="mb-3" style="width: 100px;">
                     <h1 class="card-title text-danger">¿Eres mayor de edad?</h1>
-                     <form id="ageForm" action="vista/principal.php" method="POST">
+                    <p class="text-danger mb-4">Debes ser mayor de 18 años para acceder a este sitio. Por favor, introduce tu fecha de nacimiento para continuar.</p>
+                    <form id="ageForm" action="vista/principal.php" method="POST">
                         <div class="row mb-3 text-danger">
-                            <h3> Introduce tu fecha de nacimiento: </h3><br>
                             <div class="col">
                                 <label for="fecha_dia" class="form-label text-danger">Día:</label>
                                 <input type="number" class="form-control" id="fecha_dia" name="fecha_dia" min="1" max="31" required>
@@ -35,11 +37,14 @@
                         </div>
                         <button type="button" onclick="validarEdad()" class="btn btn-danger">Comprobar</button>
                     </form>
+                    <p class="text-danger mt-4"><strong>Advertencia:</strong> El contenido de este sitio es solo para adultos. Debes ser mayor de 18 años para ingresar.</p>
+                    <p class="text-danger mt-4">Este sitio web contiene material explícito que puede no ser adecuado para menores de edad. El acceso está estrictamente prohibido para personas menores de 18 años. Al ingresar, confirmas que eres mayor de 18 años y aceptas nuestra política de privacidad y términos de uso.</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

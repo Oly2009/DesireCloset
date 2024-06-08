@@ -3,22 +3,15 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/includes/header.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/verificar_dni.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/pago.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/includes/header_admin.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/admin.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/registro.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/contacto.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/miperfil.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/ver_usuarios.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/resultados_busqueda.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/uso.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/aaaaa.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/estadistica_productos.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/login.php</file>
             <file>file:/C:/xampp/htdocs/DesireClosetTFG/Bd/datos.sql</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/assets/css/style.css</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/includes/footer_admin.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/ver_productos.php</file>
-            <file>file:/C:/xampp/htdocs/DesireClosetTFG/includes/footer.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/principal.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/pago.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/index.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/registro.php</file>
+            <file>file:/C:/xampp/htdocs/DesireClosetTFG/vista/admin.php</file>
         </group>
     </open-files>
 </project-private>

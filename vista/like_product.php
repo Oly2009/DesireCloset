@@ -14,11 +14,11 @@ if (isset($_SESSION['user_id']) && isset($_POST['idProducto']) && isset($_POST['
 
     if ($action == 'like') {
         // Agregar "Me Gusta"
-        $stmt = $conn->prepare("INSERT INTO MeGusta (idProducto, idUsuario) VALUES (?, ?)");
+        $stmt = $conn->prepare("INSERT INTO megusta (idProducto, idUsuario) VALUES (?, ?)");
         $stmt->execute([$idProducto, $idUsuario]);
     } else if ($action == 'unlike') {
         // Quitar "Me Gusta"
-        $stmt = $conn->prepare("DELETE FROM MeGusta WHERE idProducto = ? AND idUsuario = ?");
+        $stmt = $conn->prepare("DELETE FROM megusta WHERE idProducto = ? AND idUsuario = ?");
         $stmt->execute([$idProducto, $idUsuario]);
     }
 

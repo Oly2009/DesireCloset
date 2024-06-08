@@ -1,19 +1,17 @@
-
-
 <?php
 session_start();
 require_once '../config/conexion.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../vista/login.php');
-    exit;
+    exit();
 }
 
 // Obtener información del usuario
 $database = new Database();
 $conn = $database->getConnection();
 
-$stmt = $conn->prepare("SELECT * FROM Usuarios WHERE idUsuario = ?");
+$stmt = $conn->prepare("SELECT * FROM usuarios WHERE idUsuario = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -28,18 +26,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sexo = $_POST['sexo'];
     $fechaNacimiento = $_POST['fechaNacimiento'];
     $descripcion = $_POST['descripcion'];
+    $fotoPerfil = !empty($_FILES['foto']['name']) ? $_FILES['foto']['name'] : null; // Nueva foto de perfil si se proporciona
 
     try {
         // Iniciar una transacción
         $conn->beginTransaction();
 
-        // Actualizar usuario en la tabla Usuarios
-        $sql = "UPDATE Usuarios SET nombreUsuario = ?, nombre = ?, apellidos1 = ?, apellidos2 = ?, email = ?, sexo = ?, fechaNacimiento = ?, descripcion = ?";
+        // Manejar la subida de la foto de perfil
+        if ($fotoPerfil) {
+            $fotoTempPerfil = $_FILES['foto']['tmp_name'];
+            $hashedFotoPerfil = md5_file($fotoTempPerfil) . "_" . basename($fotoPerfil);
+            $rutaFotoPerfil = "../assets/uploads/$hashedFotoPerfil";
+            if (!move_uploaded_file($fotoTempPerfil, $rutaFotoPerfil)) {
+                throw new Exception("Error al subir la foto de perfil.");
+            }
+        }
+
+        // Actualizar usuario en la tabla usuarios
+        $sql = "UPDATE usuarios SET nombreUsuario = ?, nombre = ?, apellidos1 = ?, apellidos2 = ?, email = ?, sexo = ?, fechaNacimiento = ?, descripcion = ?";
         $params = [$nombreUsuario, $nombre, $apellidos1, $apellidos2, $email, $sexo, $fechaNacimiento, $descripcion];
 
         if ($password) {
             $sql .= ", password = ?";
             $params[] = $password;
+        }
+
+        if ($fotoPerfil) {
+            $sql .= ", foto = ?";
+            $params[] = $rutaFotoPerfil;
         }
 
         $sql .= " WHERE idUsuario = ?";
@@ -61,12 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
 <?php include '../includes/header.php'; ?>
 
 <section class="registro container py-5">
-    <h2 class="text-center mb-4">EDITAR PERFIL</h2>
-    <form id="editProfileForm" action="editar_perfil.php" method="post" class="needs-validation" novalidate>
+    <div style="background-color: black; color: white; padding: 5px; margin-bottom: 20px;">
+        <h2 class="mb-4" style="text-transform: uppercase; font-weight: bold; text-align: center;">Editar Perfil</h2>
+    </div>
+    <form id="editProfileForm" action="editar_perfil.php" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         <div class="row">
             <div class="col-md-6">
                 <h4 class="mb-3">DATOS DE CUENTA</h4>
@@ -107,6 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <div class="col-md-6">
                 <h4 class="mb-3">DATOS PERFIL</h4>
+                <div class="form-group mb-3 text-center">
+                    <label for="foto" class="form-label">Foto de Perfil</label>
+                    <input type="file" class="form-control" id="foto" name="foto" onchange="previewImage(event)">
+                    <img id="fotoPreview" src="<?php echo htmlspecialchars($user['foto']); ?>" alt="Previsualización de Foto de Perfil" class="img-fluid rounded-circle mt-2" style="width: 150px; height: 150px;">
+                </div>
                 <div class="form-group mb-3">
                     <label for="descripcion" class="form-label">Descripción</label>
                     <textarea class="form-control" id="descripcion" name="descripcion" placeholder="Escríbenos un texto sobre ti, gustos y aficiones, saldrá publicado en tu perfil"><?php echo htmlspecialchars($user['descripcion']); ?></textarea>
@@ -132,5 +152,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </form>
 </section>
 
-
 <?php include '../includes/footer.php'; ?>
+
+<script>
+function previewImage(event) {
+    var reader = new FileReader();
+    reader.onload = function() {
+        var output = document.getElementById('fotoPreview');
+        output.src = reader.result;
+        output.style.display = 'block';
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
+</script>

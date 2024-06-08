@@ -9,15 +9,16 @@ $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'invitado'; 
 
 $query = "SELECT p.*, u.nombreUsuario, u.foto as fotoUsuario, f.nombreFoto, t.estado,
-          (SELECT COUNT(*) FROM MeGusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
-          (SELECT COUNT(*) FROM MeGusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = ?) AS userLikeCount
-          FROM Productos p
-          JOIN Usuarios u ON p.idUsuario = u.idUsuario
-          LEFT JOIN (SELECT nombreFoto, idProducto FROM Fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
-          LEFT JOIN Transacciones t ON p.idProducto = t.idProducto
-          WHERE p.idCategoria = (SELECT idCategoria FROM Categorias WHERE nombreCategoria = 'Bragas y Tangas')
+          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
+          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = ?) AS userLikeCount
+          FROM productos p
+          JOIN usuarios u ON p.idUsuario = u.idUsuario
+          LEFT JOIN (SELECT nombreFoto, idProducto FROM fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
+          LEFT JOIN transacciones t ON p.idProducto = t.idProducto
+          WHERE p.idCategoria = (SELECT idCategoria FROM categorias WHERE nombreCategoria = 'Bragas y Tangas')
           AND (t.estado IS NULL OR t.estado != 'vendido')
           GROUP BY p.idProducto";
+
 $stmt = $db->prepare($query);
 $stmt->execute([$user_id]);
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);

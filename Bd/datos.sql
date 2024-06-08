@@ -8,7 +8,7 @@ CREATE DATABASE DesireCloset;
 USE DesireCloset;
 
 -- Tabla Usuarios
-CREATE TABLE Usuarios (
+CREATE TABLE usuarios (
     idUsuario INT AUTO_INCREMENT PRIMARY KEY,
     nombreUsuario VARCHAR(25),
     nombre VARCHAR(25),
@@ -27,13 +27,13 @@ CREATE TABLE Usuarios (
 );
 
 -- Tabla Roles
-CREATE TABLE Roles (
+CREATE TABLE roles (
     idRol INT AUTO_INCREMENT PRIMARY KEY,
     nombreRol VARCHAR(25)
 );
 
 -- Tabla Usuarios_Roles
-CREATE TABLE Usuarios_Roles (
+CREATE TABLE usuarios_roles (
     idUsuarioRol INT AUTO_INCREMENT PRIMARY KEY,
     idUsuario INT,
     idRol INT,
@@ -42,13 +42,13 @@ CREATE TABLE Usuarios_Roles (
 );
 
 -- Tabla Categorias
-CREATE TABLE Categorias (
+CREATE TABLE categorias (
     idCategoria INT AUTO_INCREMENT PRIMARY KEY,
     nombreCategoria VARCHAR(25)
 );
 
 -- Tabla Productos
-CREATE TABLE Productos (
+CREATE TABLE productos (
     idProducto INT AUTO_INCREMENT PRIMARY KEY,
     nombreProducto VARCHAR(25),
     talla VARCHAR(25),
@@ -62,7 +62,7 @@ CREATE TABLE Productos (
 );
 
 -- Tabla Fotos
-CREATE TABLE Fotos (
+CREATE TABLE fotos (
     idFoto INT AUTO_INCREMENT PRIMARY KEY,
     nombreFoto VARCHAR(255),
     idProducto INT,
@@ -72,7 +72,7 @@ CREATE TABLE Fotos (
 );
 
 -- Tabla MeGusta
-CREATE TABLE MeGusta (
+CREATE TABLE meGusta (
     idMeGusta INT AUTO_INCREMENT PRIMARY KEY,
     idProducto INT,
     idUsuario INT,
@@ -81,7 +81,7 @@ CREATE TABLE MeGusta (
 );
 
 -- Tabla Mensajes
-CREATE TABLE Mensajes (
+CREATE TABLE mensajes (
     idMensaje INT AUTO_INCREMENT PRIMARY KEY,
     idEmisor INT,
     idReceptor INT,
@@ -93,7 +93,7 @@ CREATE TABLE Mensajes (
 );
 
 -- Tabla Valoraciones
-CREATE TABLE Valoraciones (
+CREATE TABLE valoraciones (
     idValoracion INT AUTO_INCREMENT PRIMARY KEY,
     idValorado INT,
     idValorador INT,
@@ -104,7 +104,7 @@ CREATE TABLE Valoraciones (
 );
 
 -- Tabla Transacciones
-CREATE TABLE Transacciones (
+CREATE TABLE transacciones (
     idTransaccion INT AUTO_INCREMENT PRIMARY KEY,
     idComprador INT,
     idVendedor INT,
@@ -112,14 +112,14 @@ CREATE TABLE Transacciones (
     fechaTransaccion DATE,
     hora TIME,
     cantidad DECIMAL(10, 2),
-    estado ENUM('vendido', 'comprado', 'reservado','enventa'),
+    estado ENUM('vendido',  'reservado','enventa'),
     FOREIGN KEY (idComprador) REFERENCES Usuarios(idUsuario),
     FOREIGN KEY (idVendedor) REFERENCES Usuarios(idUsuario),
     FOREIGN KEY (idProducto) REFERENCES Productos(idProducto)
 );
 
 -- Tabla ValidacionDNI
-CREATE TABLE ValidacionDNI (
+CREATE TABLE validaciondni (
     idValidacion INT AUTO_INCREMENT PRIMARY KEY,
     dni VARCHAR(255) NOT NULL,
     estado ENUM('pendiente', 'validado', 'rechazado') NOT NULL,
@@ -129,10 +129,10 @@ CREATE TABLE ValidacionDNI (
 );
 
 -- Insertar los roles
-INSERT INTO Roles (nombreRol) VALUES ('admin'), ('usuario'), ('invitado');
+INSERT INTO roles (nombreRol) VALUES ('admin'), ('usuario'), ('invitado');
 
 -- Insertar las categorías en la tabla Categorias
-INSERT INTO Categorias (nombreCategoria) VALUES 
+INSERT INTO categorias (nombreCategoria) VALUES 
 ('Bragas y Tangas'), 
 ('Sujetadores'), 
 ('Fotos de pies'), 

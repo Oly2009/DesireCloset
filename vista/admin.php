@@ -13,32 +13,41 @@ $conn = $database->getConnection();
 
 // Obtener datos de la base de datos
 try {
-    // Total de usuarios no administradores (rol = usuario)
+    // Total de usuarios no administradores (excluyendo admins)
     $stmt = $conn->query("
         SELECT COUNT(*) 
-        FROM Usuarios u
-        JOIN Usuarios_Roles ur ON u.idUsuario = ur.idUsuario
-        WHERE ur.idRol = 2
+        FROM usuarios u
+        JOIN usuarios_roles ur ON u.idusuario = ur.idusuario
+        WHERE ur.idrol = 2
     ");
     $totalUsuarios = $stmt->fetchColumn();
 
-    // Total de productos
-    $stmt = $conn->query("SELECT COUNT(*) FROM Productos");
-    $totalProductos = $stmt->fetchColumn();
+    // Total de productos en venta
+    $stmt = $conn->query("SELECT COUNT(*) FROM productos p LEFT JOIN transacciones t ON p.idProducto = t.idProducto WHERE t.estado IS NULL OR t.estado = 'enventa'");
+    $totalProductosEnVenta = $stmt->fetchColumn();
 
-    // Total de ventas
-    $stmt = $conn->query("SELECT COUNT(*) FROM Transacciones");
-    $totalVentas = $stmt->fetchColumn();
+    // Total de productos vendidos
+    $stmt = $conn->query("SELECT COUNT(*) FROM transacciones WHERE estado = 'vendido'");
+    $totalProductosVendidos = $stmt->fetchColumn();
+
+    // Total de ingresos de todos los usuarios (excepto admins)
+    $stmt = $conn->query("
+        SELECT COUNT(*) * 106 AS totalIngresos
+        FROM usuarios u
+        JOIN usuarios_roles ur ON u.idusuario = ur.idusuario
+        WHERE ur.idrol != 1
+    ");
+    $totalIngresos = $stmt->fetchColumn();
 
     // Obtener el número de usuarios suscritos por mes con el rol de usuario (idRol = 2)
     $stmt = $conn->query("
         SELECT 
-            MONTH(u.fechaRegistro) as mes,
+            MONTH(u.fecharegistro) as mes,
             COUNT(*) as suscritos
-        FROM Usuarios u
-        JOIN Usuarios_Roles ur ON u.idUsuario = ur.idUsuario
-        WHERE ur.idRol = 2
-        GROUP BY MONTH(u.fechaRegistro)
+        FROM usuarios u
+        JOIN usuarios_roles ur ON u.idusuario = ur.idusuario
+        WHERE ur.idrol = 2
+        GROUP BY MONTH(u.fecharegistro)
     ");
     $suscripcionesMensuales = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -49,18 +58,16 @@ try {
         $ingresosMensuales[$mes] = $suscripcion['suscritos'] * (106 / 12); // Ingresos mensuales por suscripción
     }
 
-    // Calcular ingresos totales
-    $totalIngresos = array_sum($ingresosMensuales) * 12; // Ingresos anuales
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage();
 }
 
-include '../includes/header.php';
+include '../includes/header_admin.php';
 ?>
 
-<div class="d-flex" id="wrapper">
+<div class="admin d-flex" id="wrapper" style="min-height: 100vh; overflow-x: hidden;">
     <!-- Sidebar -->
-      <div class="bg-dark border-right" id="sidebar-wrapper">
+    <div class="bg-dark border-right" id="sidebar-wrapper" style="width: 150px;">
         <div class="sidebar-heading text-white">DesireCloset Admin</div>
         <div class="list-group list-group-flush">
             <a href="admin.php" class="list-group-item list-group-item-action bg-dark text-white">Dashboard</a>
@@ -71,51 +78,45 @@ include '../includes/header.php';
             <a href="logout.php" class="list-group-item list-group-item-action bg-dark text-white">Cerrar Sesión</a>
         </div>
     </div>
-    <!-- /#sidebar-wrapper -->
 
     <!-- Contenido de la página -->
-    <div id="page-content-wrapper">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button>
-        </nav>
-
-        <div class="container-fluid">
-            <h1 class="mt-4">Dashboard</h1>
-            <p>Bienvenido al panel de administración de DesireCloset.</p>
+    <main id="page-content-wrapper" class="flex-grow-1 d-flex flex-column" style="min-width: 0;">
+        <div class="container mt-5">
+            <h2>Dashboard</h2>
             <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="card text-white bg-primary mb-3">
-                        <div class="card-header">Usuarios</div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card text-white bg-dark h-100">
+                        <div class="card-header bg-danger text-white">Usuarios</div>
                         <div class="card-body">
-                            <h5 class="card-title"><?php echo $totalUsuarios; ?></h5>
-                            <p class="card-text">Total de usuarios registrados.</p>
+                            <h5 class="card-title text-white"><?php echo $totalUsuarios; ?></h5>
+                          
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card text-white bg-success mb-3">
-                        <div class="card-header">Productos</div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card text-white bg-dark h-100">
+                        <div class="card-header bg-danger text-white">Productos en Venta</div>
                         <div class="card-body">
-                            <h5 class="card-title"><?php echo $totalProductos; ?></h5>
-                            <p class="card-text">Total de productos en venta.</p>
+                            <h5 class="card-title text-white"><?php echo $totalProductosEnVenta; ?></h5>
+                            <p class="card-text text-white">Total de productos en venta.</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card text-white bg-warning mb-3">
-                        <div class="card-header">Ventas</div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card text-white bg-dark h-100">
+                        <div class="card-header bg-danger text-white">Productos Vendidos</div>
                         <div class="card-body">
-                            <h5 class="card-title"><?php echo $totalVentas; ?></h5>
-                            <p class="card-text">Total de ventas realizadas.</p>
+                            <h5 class="card-title text-white"><?php echo $totalProductosVendidos; ?></h5>
+                            <p class="card-text text-white">Total de productos vendidos.</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card text-white bg-danger mb-3">
-                        <div class="card-header">Ingresos</div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                    <div class="card text-white bg-dark h-100">
+                        <div class="card-header bg-danger text-white">Ingresos Totales</div>
                         <div class="card-body">
-                            <h5 class="card-title">€<?php echo number_format($totalIngresos, 2); ?></h5>
-                            <p class="card-text">Ingresos totales.</p>
+                            <h5 class="card-title text-white">€<?php echo number_format($totalIngresos, 2); ?></h5>
+                          
                         </div>
                     </div>
                 </div>
@@ -126,13 +127,15 @@ include '../includes/header.php';
                 </div>
             </div>
         </div>
-    </div>
+    </main>
     <!-- /#page-content-wrapper -->
 </div>
 <!-- /#wrapper -->
 
-<?php include '../includes/footer.php'; ?>
-
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Toggle the side navigation
@@ -165,3 +168,4 @@ include '../includes/header.php';
     });
 </script>
 
+<?php include '../includes/footer_admin.php'; ?>

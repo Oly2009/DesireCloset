@@ -1,21 +1,57 @@
 <?php
 session_start();
+
+// Habilitar la visualización de errores
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Incluir el archivo de conexión
 require_once '../config/conexion.php';
 
-// Conectar a la base de datos
-$database = new Database();
-$conn = $database->getConnection();
+// La conexión ya ha sido establecida en conexion.php y almacenada en $conn
+if ($conn) {
+    // Obtener los 20 usuarios con mejores valoraciones
+    $query = "SELECT u.idUsuario, u.nombreUsuario, u.foto, u.descripcion, u.fechaNacimiento, AVG(v.valoracion) as ratingAverage
+              FROM usuarios u 
+              JOIN usuarios_roles ur ON u.idUsuario = ur.idUsuario
+              LEFT JOIN valoraciones v ON u.idUsuario = v.idValorado
+              WHERE ur.idRol = 2 AND u.fechaBaja IS NULL
+              GROUP BY u.idUsuario
+              ORDER BY ratingAverage DESC
+              LIMIT 20";
+    $stmt = $conn->prepare($query);
 
-// Obtener usuarios con el rol de usuario (idRol = 2)
-$query = "SELECT u.nombreUsuario, u.foto, u.descripcion 
-          FROM Usuarios u 
-          JOIN Usuarios_Roles ur ON u.idUsuario = ur.idUsuario 
-          WHERE ur.idRol = 2";
-$stmt = $conn->prepare($query);
-$stmt->execute();
-$usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($stmt->execute()) {
+        $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $usuarios = [];
+        error_log("Error: No se pudo ejecutar la consulta.");
+    }
+} else {
+    $usuarios = [];
+    error_log("Error: No se pudo establecer la conexión con la base de datos.");
+}
 
 include '../includes/header.php';
+
+function getStarRating($rating) {
+    if ($rating === null) {
+        return '<i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i>';
+    }
+    
+    $stars = '';
+    for ($i = 0; $i < 5; $i++) {
+        if ($i < floor($rating)) {
+            $stars .= '<i class="fas fa-star text-warning"></i>';
+        } elseif ($i < ceil($rating)) {
+            $stars .= '<i class="fas fa-star-half-alt text-warning"></i>';
+        } else {
+            $stars .= '<i class="far fa-star text-warning"></i>';
+        }
+    }
+    return $stars;
+}
 ?>
 
 <main>
@@ -67,12 +103,12 @@ include '../includes/header.php';
     </div>
 
     <!-- Secciones de Contenido -->
-    <div class="principal container mt-4">
-        <h1 class="section-title titulo text-danger text-center">Compra y vende artículos fetichistas</h1>
+    <div class="principal container mt-3">
+        <h1 class="section-title titulo text-danger text-center ">Compra y vende artículos fetichistas</h1>
         
         <div class="row mt-4">
             <div class="col-md-6">
-                <img src="../assets/img/principal1.jpg" class="img-fluid" alt="Imagen">
+                <img src="../assets/img/sujetador1.jpg" class="img-fluid" alt="Imagen">
             </div>
             <div class="col-md-6">
                 <h2 class="section-title text-danger">Descubre las Mejores Bragas Usadas de Segunda Mano</h2>
@@ -115,26 +151,29 @@ include '../includes/header.php';
                 </p>
             </div>
             <div class="col-md-6">
-                <img src="../assets/img/principal-2.jpg" class="img-fluid" alt="Imagen">
+                <img src="../assets/img/tio.jpg" class="img-fluid" alt="Imagen">
             </div>
         </div>
 
-        <h2 class="section-title text-danger mt-5">Conecta con nuestros usuarios destacados </h2>
+        <h2 class="section-title text-danger mt-5">Conecta con nuestros usuarios destacados</h2>
         <div class="row mt-3">
-            <?php foreach ($usuarios as $usuario): ?>
-                <div class="col-md-3 text-center mb-4">
-                    <?php 
-                        $fotoPath = htmlspecialchars($usuario['foto']);
-                        if (!empty($usuario['foto']) && file_exists($fotoPath)): ?>
-                        <img src="<?php echo $fotoPath; ?>" class="img-fluid rounded-circle mb-2" alt="<?php echo htmlspecialchars($usuario['nombreUsuario']); ?>" style="width: 150px; height: 150px;">
-                    <?php else: ?>
-                        <img src="../assets/uploads/default-profile.png" class="img-fluid rounded-circle mb-2" alt="Default Profile" style="width: 150px; height: 150px;">
-                    <?php endif; ?>
-                    <h5 class="text-danger"><?php echo htmlspecialchars($usuario['nombreUsuario']); ?></h5>
-                    <p class="text-muted"><?php echo htmlspecialchars($usuario['descripcion']); ?></p>
-                </div>
-            <?php endforeach; ?>
-            <?php if (empty($usuarios)): ?>
+            <?php if (!empty($usuarios)): ?>
+                <?php foreach ($usuarios as $usuario): ?>
+                    <div class="col-md-3 text-center mb-4">
+                        <a href="#" onclick="openUserModal(<?php echo $usuario['idUsuario']; ?>)">
+                            <?php 
+                                $fotoPath = htmlspecialchars($usuario['foto'] ?? '../assets/uploads/default-profile.png');
+                                if (!empty($usuario['foto']) && file_exists($fotoPath)): ?>
+                                <img src="<?php echo $fotoPath; ?>" class="img-fluid rounded-circle mb-2" alt="<?php echo htmlspecialchars($usuario['nombreUsuario'] ?? 'Usuario'); ?>" style="width: 150px; height: 150px;">
+                            <?php else: ?>
+                                <img src="../assets/uploads/default-profile.png" class="img-fluid rounded-circle mb-2" alt="Default Profile" style="width: 150px; height: 150px;">
+                            <?php endif; ?>
+                        </a>
+                        <h5 class="text-danger"><?php echo htmlspecialchars($usuario['nombreUsuario'] ?? 'Usuario'); ?></h5>
+                        <p class="text-muted"><?php echo getStarRating($usuario['ratingAverage'] ?? 0); ?></p>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
                 <div class="col-12 text-center">
                     <p class="text-danger">No se encontraron usuarios.</p>
                 </div>
@@ -142,5 +181,26 @@ include '../includes/header.php';
         </div>
     </div>
 </main>
+
+<!-- Modal Structure for Users -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <!-- Content loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<script>
+function openUserModal(userId) {
+    // Fetch user details via AJAX
+    fetch('detalles_urs.php?id=' + userId)
+        .then(response => response.text())
+        .then(html => {
+            document.querySelector('#userModal .modal-content').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('userModal')).show();
+        });
+}
+</script>
 
 <?php include '../includes/footer.php'; ?>

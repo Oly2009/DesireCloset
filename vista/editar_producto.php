@@ -1,5 +1,6 @@
 <?php
 require_once '../config/conexion.php';
+
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
@@ -19,7 +20,7 @@ $error_message = '';
 if (isset($_GET['id'])) {
     $idProducto = $_GET['id'];
 
-    $query = "SELECT * FROM Productos WHERE idProducto = :idProducto AND idUsuario = :idUsuario";
+    $query = "SELECT * FROM productos WHERE idProducto = :idProducto AND idUsuario = :idUsuario";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':idProducto', $idProducto);
     $stmt->bindParam(':idUsuario', $_SESSION['user_id']);
@@ -33,7 +34,7 @@ if (isset($_GET['id'])) {
     }
 
     // Obtener las fotos del producto
-    $queryFotos = "SELECT nombreFoto FROM Fotos WHERE idProducto = :idProducto";
+    $queryFotos = "SELECT nombreFoto FROM fotos WHERE idProducto = :idProducto";
     $stmtFotos = $conn->prepare($queryFotos);
     $stmtFotos->bindParam(':idProducto', $idProducto);
     $stmtFotos->execute();
@@ -67,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
 
             // Eliminar las fotos anteriores
-            $queryDeleteFotos = "DELETE FROM Fotos WHERE idProducto = :idProducto";
+            $queryDeleteFotos = "DELETE FROM fotos WHERE idProducto = :idProducto";
             $stmtDeleteFotos = $conn->prepare($queryDeleteFotos);
             $stmtDeleteFotos->bindParam(':idProducto', $idProducto);
             $stmtDeleteFotos->execute();
@@ -77,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $tmp_name = $fotos['tmp_name'][$index];
                 $target_file = $target_dir . md5_file($tmp_name) . "_" . basename($foto_name);
                 if (move_uploaded_file($tmp_name, $target_file)) {
-                    $foto_query = "INSERT INTO Fotos (nombreFoto, idProducto, idUsuario) VALUES (:nombreFoto, :idProducto, :idUsuario)";
+                    $foto_query = "INSERT INTO fotos (nombreFoto, idProducto, idUsuario) VALUES (:nombreFoto, :idProducto, :idUsuario)";
                     $foto_stmt = $conn->prepare($foto_query);
                     $foto_stmt->bindParam(':nombreFoto', $target_file);
                     $foto_stmt->bindParam(':idProducto', $idProducto);
@@ -93,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (empty($error_message)) {
-        $query = "UPDATE Productos SET nombreProducto = :nombreProducto, talla = :talla, descripcion = :descripcion, precio = :precio, condicion = :condicion WHERE idProducto = :idProducto";
+        $query = "UPDATE productos SET nombreProducto = :nombreProducto, talla = :talla, descripcion = :descripcion, precio = :precio, condicion = :condicion WHERE idProducto = :idProducto";
         $stmt = $conn->prepare($query);
         $stmt->bindParam(':nombreProducto', $nombreProducto);
         $stmt->bindParam(':talla', $talla);
@@ -113,7 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 <?php if ($_SERVER['REQUEST_METHOD'] == 'POST'): ?>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Función para mostrar un mensaje de éxito con SweetAlert
         function mostrarMensajeExito(mensaje) {
@@ -179,8 +182,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required><?= htmlspecialchars($producto['descripcion']) ?></textarea>
             </div>
             <div class="row mb-3">
-                <div class="col-md-6
-                      <label for="precio" class="form-label">Precio (€)</label>
+                <div class="col-md-6">
+                    <label for="precio" class="form-label">Precio (€)</label>
                     <input type="number" class="form-control" id="precio" name="precio" step="0.01" value="<?= htmlspecialchars($producto['precio']) ?>" required>
                 </div>
                 <div class="col-md-6">
@@ -194,11 +197,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <div class="mb-3">
                 <label for="fotos2" class="form-label">Foto 2</label>
-                <input type="file" class="form-control" id="fotos2" name="fotos[]" onchange="previewFotos(event, 'preview2')" >
+                <input type="file" class="form-control" id="fotos2" name="fotos[]" onchange="previewFotos(event, 'preview2')">
             </div>
             <div class="mb-3">
                 <label for="fotos3" class="form-label">Foto 3</label>
-                <input type="file" class="form-control" id="fotos3" name="fotos[]" onchange="previewFotos(event, 'preview3')" >
+                <input type="file" class="form-control" id="fotos3" name="fotos[]" onchange="previewFotos(event, 'preview3')">
             </div>
             <div id="preview1" class="mb-3"></div>
             <div id="preview2" class="mb-3"></div>
@@ -223,5 +226,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 </div>
 
-  
 <?php include '../includes/footer.php'; ?>
+
+<script>
+function previewFotos(event, previewId) {
+    var reader = new FileReader();
+    reader.onload = function() {
+        var output = document.getElementById(previewId);
+        output.innerHTML = '<img src="' + reader.result + '" class="img-thumbnail" style="width: 100px; height: 100px;">';
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
+</script>

@@ -1,4 +1,8 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_start();
 require_once '../config/conexion.php';
 
@@ -14,9 +18,9 @@ $db = $database->getConnection();
 
 // Fetch product details and photos
 $query = "SELECT p.*, u.nombreUsuario, u.foto as fotoUsuario, f.nombreFoto 
-          FROM Productos p
-          JOIN Usuarios u ON p.idUsuario = u.idUsuario
-          LEFT JOIN Fotos f ON p.idProducto = f.idProducto
+          FROM productos p
+          JOIN usuarios u ON p.idUsuario = u.idUsuario
+          LEFT JOIN fotos f ON p.idProducto = f.idProducto
           WHERE p.idProducto = ?";
 $stmt = $db->prepare($query);
 $stmt->execute([$productId]);
@@ -28,23 +32,28 @@ if (!$product) {
 }
 
 // Fetch all photos of the product
-$photoQuery = "SELECT nombreFoto FROM Fotos WHERE idProducto = ?";
+$photoQuery = "SELECT nombreFoto FROM fotos WHERE idProducto = ?";
 $photoStmt = $db->prepare($photoQuery);
 $photoStmt->execute([$productId]);
 $photos = $photoStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Check user role
+// Check user role and ownership
 $userId = $_SESSION['user_id'] ?? null;
 $canBuy = false;
+$isOwner = false;
 
 if ($userId) {
-    $userRoleQuery = "SELECT idRol FROM Usuarios_Roles WHERE idUsuario = ?";
+    $userRoleQuery = "SELECT idRol FROM usuarios_roles WHERE idUsuario = ?";
     $userRoleStmt = $db->prepare($userRoleQuery);
     $userRoleStmt->execute([$userId]);
     $userRole = $userRoleStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($userRole && $userRole['idRol'] == 2) {
         $canBuy = true;
+    }
+
+    if ($product['idUsuario'] == $userId) {
+        $isOwner = true;
     }
 }
 ?>
@@ -92,10 +101,12 @@ if ($userId) {
                     <label for="descripcion" class="form-label">Descripción</label>
                     <textarea class="form-control" id="descripcion" rows="3" disabled><?php echo htmlspecialchars($product['descripcion']); ?></textarea>
                 </div>
-                <?php if ($canBuy): ?>
-                    <button type="button" class="btn btn-primary" onclick="window.location.href='correo.php?id=<?php echo $productId; ?>'">Comprar</button>
+                <?php if ($canBuy && !$isOwner): ?>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='pago_producto.php?id=<?php echo $productId; ?>'">Comprar</button>
+                <?php elseif ($isOwner): ?>
+                    <p class="text-warning">No puedes comprar tu propio producto.</p>
                 <?php else: ?>
-                    <p class="text-danger">Solo si estas registrado puedes comprar este producto.</p>
+                    <p class="text-danger">Solo si estas subscrito puedes comprar este producto.</p>
                 <?php endif; ?>
             </form>
         </div>

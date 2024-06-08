@@ -40,8 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         try {
+            // Iniciar transacción
+            $conn->beginTransaction();
+
             // Insertar producto en la base de datos
-            $query = "INSERT INTO Productos (nombreProducto, talla, descripcion, precio, condicion, idUsuario, idCategoria) 
+            $query = "INSERT INTO productos (nombreProducto, talla, descripcion, precio, condicion, idUsuario, idCategoria) 
                       VALUES (:nombreProducto, :talla, :descripcion, :precio, :condicion, :idUsuario, :idCategoria)";
             $stmt = $conn->prepare($query);
             $stmt->bindParam(':nombreProducto', $nombreProducto);
@@ -60,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $hora = date("H:i:s");
                 $estado = 'enventa'; // Estado establecido como 'enventa'
 
-                $transaccion_query = "INSERT INTO Transacciones (idComprador, idVendedor, idProducto, fechaTransaccion, hora, estado) 
+                $transaccion_query = "INSERT INTO transacciones (idComprador, idVendedor, idProducto, fechaTransaccion, hora, estado) 
                                      VALUES (NULL, :idVendedor, :idProducto, :fechaTransaccion, :hora, :estado)";
                 $transaccion_stmt = $conn->prepare($transaccion_query);
                 $transaccion_stmt->bindParam(':idVendedor', $idUsuario); // El usuario que subió el producto es el vendedor
@@ -80,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $foto_name = basename($foto['name']);
                         $target_file = $target_dir . $foto_name;
                         if (move_uploaded_file($foto['tmp_name'], $target_file)) {
-                            $foto_query = "INSERT INTO Fotos (nombreFoto, idProducto, idUsuario) VALUES (:nombreFoto, :idProducto, :idUsuario)";
+                            $foto_query = "INSERT INTO fotos (nombreFoto, idProducto, idUsuario) VALUES (:nombreFoto, :idProducto, :idUsuario)";
                             $foto_stmt = $conn->prepare($foto_query);
                             $foto_stmt->bindParam(':nombreFoto', $target_file);
                             $foto_stmt->bindParam(':idProducto', $idProducto);
@@ -93,10 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         }
                     }
                 }
+                // Confirmar la transacción
+                $conn->commit();
             } else {
                 $error_message = "Error al insertar el producto en la base de datos: " . $stmt->errorInfo()[2];
             }
         } catch (PDOException $e) {
+            // Revertir transacción en caso de error
+            $conn->rollBack();
             $error_message = "Error: " . $e->getMessage();
         }
     } else {
@@ -170,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div id="preview" class="mb-3"></div>
             <div class="d-flex justify-content-between">
                 <a href="miperfil.php" class="btn btn-dark">Volver</a>
-                <button type="submit" class="btn btn-subir-productos">Subir Producto</button>
+                <button type="submit" class="btn btn-danger">Subir Producto</button>
             </div>
         </form>
     </div>

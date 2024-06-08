@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $conn = $database->getConnection();
 
     // Verificar si el correo electrónico existe en la base de datos
-    $query = "SELECT idUsuario, nombreUsuario FROM Usuarios WHERE email = :email";
+    $query = "SELECT idUsuario, nombreUsuario FROM usuarios WHERE email = :email";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':email', $email);
     $stmt->execute();
@@ -18,46 +18,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $idUsuario = $row['idUsuario'];
         $nombreUsuario = $row['nombreUsuario'];
 
-        // Generar un token único
-        $token = bin2hex(random_bytes(50));
-
-        // Guardar el token en la sesión
+        // Guardar el ID del usuario en la sesión
         session_start();
-        $_SESSION['token'] = $token;
         $_SESSION['idUsuario'] = $idUsuario;
+        $_SESSION['email'] = $email;
 
-        // Enviar el correo electrónico
-        $resetLink = "http://yourdomain.com/vista/restablecer.php?token=" . $token;
-        $subject = "Restablecimiento de Contraseña";
-        $message = "<p>Hola $nombreUsuario,</p><p>Haga clic en el siguiente enlace para restablecer su contraseña: <a href='$resetLink'>Restablecer Contraseña</a></p>";
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= 'From: DesireCloset <your-email@example.com>' . "\r\n";
-
-        if (mail($email, $subject, $message, $headers)) {
-            $mensaje = "Se ha enviado un correo electrónico con las instrucciones para restablecer su contraseña.";
-        } else {
-            $mensaje = "Hubo un error al enviar el correo electrónico. Inténtalo de nuevo más tarde.";
-        }
+        // Redirigir al formulario para establecer una nueva contraseña
+        header("Location: establecer_contrasena.php");
+        exit();
     } else {
         $mensaje = "El correo electrónico no está registrado.";
+        header("Location: recuperar.php?mensaje=" . urlencode($mensaje));
+        exit();
     }
-
-    header("Location: recuperar.php?mensaje=" . urlencode($mensaje));
-    exit();
 }
 ?>
 
-<?php
-include '../includes/header.php';
-?>
+<?php include '../includes/header.php'; ?>
 
 <section class="recuperar container py-5">
     <h2 class="text-center mb-4">Recuperar Contraseña</h2>
     <?php if (isset($_GET['mensaje'])): ?>
-        <div class="alert alert-success text-center"><?php echo $_GET['mensaje']; ?></div>
+        <div class="alert alert-danger text-center"><?php echo $_GET['mensaje']; ?></div>
     <?php endif; ?>
-    <form id="recuperarForm" action="enviar.php" method="post" class="needs-validation" novalidate>
+    <form id="recuperarForm" action="recuperar.php" method="post" class="needs-validation" novalidate>
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="form-group mb-3">

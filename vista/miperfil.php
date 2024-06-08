@@ -26,15 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['idProducto'])) {
             $conn->beginTransaction();
 
             // Eliminar las fotos asociadas al producto
-            $stmt = $conn->prepare("DELETE FROM Fotos WHERE idProducto = ?");
+            $stmt = $conn->prepare("DELETE FROM fotos WHERE idProducto = ?");
             $stmt->execute([$idProducto]);
 
             // Eliminar las transacciones asociadas al producto
-            $stmt = $conn->prepare("DELETE FROM Transacciones WHERE idProducto = ?");
+            $stmt = $conn->prepare("DELETE FROM transacciones WHERE idProducto = ?");
             $stmt->execute([$idProducto]);
 
             // Luego eliminar el producto
-            $stmt = $conn->prepare("DELETE FROM Productos WHERE idProducto = ? AND idUsuario = ?");
+            $stmt = $conn->prepare("DELETE FROM productos WHERE idProducto = ? AND idUsuario = ?");
             $stmt->execute([$idProducto, $_SESSION['user_id']]);
             $deleted = $stmt->rowCount();
 
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['idProducto'])) {
     } elseif ($_POST['action'] == 'cambiarEstado' && isset($_POST['nuevoEstado'])) {
         try {
             $nuevoEstado = $_POST['nuevoEstado'];
-            $stmt = $conn->prepare("UPDATE Transacciones SET estado = ? WHERE idProducto = ?");
+            $stmt = $conn->prepare("UPDATE transacciones SET estado = ? WHERE idProducto = ?");
             $stmt->execute([$nuevoEstado, $idProducto]);
             $success_message = "Estado del producto actualizado a '$nuevoEstado'.";
         } catch (Exception $e) {
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['idProducto'])) {
 
 try {
     // Obtener información del usuario
-    $stmt = $conn->prepare("SELECT * FROM Usuarios WHERE idUsuario = ?");
+    $stmt = $conn->prepare("SELECT * FROM usuarios WHERE idUsuario = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -73,7 +73,7 @@ try {
     }
 
     // Obtener calificación del usuario
-    $stmt = $conn->prepare("SELECT AVG(valoracion) as ratingAverage, COUNT(*) as totalRatings FROM Valoraciones WHERE idValorado = ?");
+    $stmt = $conn->prepare("SELECT AVG(valoracion) as ratingAverage, COUNT(*) as totalRatings FROM valoraciones WHERE idValorado = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $ratings = $stmt->fetch(PDO::FETCH_ASSOC);
     $ratingAverage = isset($ratings['ratingAverage']) ? $ratings['ratingAverage'] : 0;
@@ -138,14 +138,16 @@ function getStarRating($rating) {
     </ul>
 
     <div class="tab-content" id="myTabContent">
+        <!-- Pestaña Mis Productos -->
         <div class="tab-pane fade show active" id="productos" role="tabpanel" aria-labelledby="productos-tab">
             <?php
-            // Obtener productos en venta (estado 'enventa', 'reservado' o 'vendido')
-            $stmt = $conn->prepare("SELECT P.*, F.nombreFoto, T.estado FROM Productos P 
-                                    LEFT JOIN Fotos F ON P.idProducto = F.idProducto 
-                                    LEFT JOIN Transacciones T ON P.idProducto = T.idProducto 
-                                    WHERE P.idUsuario = ? 
-                                    GROUP BY P.idProducto");
+            // Obtener productos en venta y reservados
+            $stmt = $conn->prepare("SELECT p.*, f.nombreFoto, t.estado 
+                                    FROM productos p 
+                                    LEFT JOIN fotos f ON p.idProducto = f.idProducto 
+                                    LEFT JOIN transacciones t ON p.idProducto = t.idProducto 
+                                    WHERE t.idVendedor = ? AND (t.estado = 'enventa' OR t.estado = 'reservado') 
+                                    GROUP BY p.idProducto");
             $stmt->execute([$_SESSION['user_id']]);
             $productsForSale = $stmt->fetchAll(PDO::FETCH_ASSOC);
             ?>
@@ -157,10 +159,10 @@ function getStarRating($rating) {
                 <?php if (!empty($productsForSale)): ?>
                     <?php foreach ($productsForSale as $product): ?>
                         <div class="col-md-4 mb-4">
-                            <div class="card">
-                                <div style="width: 100%; height: 300px; overflow: hidden;">
+                            <div class="card p-card">
+                                <div class="product-image-wrapper">
                                     <?php if (!empty($product['nombreFoto'])): ?>
-                                        <img src="<?php echo htmlspecialchars($product['nombreFoto']); ?>" class="card-img-top" alt="Foto del producto" style="height: 300px; width: 100%; object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars($product['nombreFoto']); ?>" class="card-img-top product-image" alt="Foto del producto">
                                     <?php else: ?>
                                         <p>No hay fotos disponibles</p>
                                     <?php endif; ?>
@@ -177,10 +179,10 @@ function getStarRating($rating) {
                                             <?php endif; ?>
                                         </div>
                                         <div class="dropdown">
-                                            <a class="text-danger" href="#" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
+                                            <a class="text-danger" href="#" id="dropdownMenuLink<?php echo $product['idProducto']; ?>" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-bars"></i>
                                             </a>
-                                            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
+                                            <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdownMenuLink<?php echo $product['idProducto']; ?>">
                                                 <li><a class="dropdown-item" style="color: red;" href="editar_producto.php?id=<?php echo $product['idProducto']; ?>">Editar</a></li>
                                                 <li><a class="dropdown-item" style="color: red;" href="#" onclick="borrarProducto('<?php echo $product['idProducto']; ?>')">Borrar</a></li>
                                                 <?php if ($product['estado'] != 'vendido'): ?>
@@ -188,9 +190,6 @@ function getStarRating($rating) {
                                                 <?php endif; ?>
                                                 <?php if ($product['estado'] == 'reservado'): ?>
                                                     <li><a class="dropdown-item" style="color: red;" href="#" onclick="cambiarEstado('<?php echo $product['idProducto']; ?>', 'enventa')">Volver a poner en venta</a></li>
-                                                <?php endif; ?>
-                                                <?php if ($product['estado'] != 'vendido'): ?>
-                                                    <li><a class="dropdown-item" style="color: red;" href="#" onclick="cambiarEstado('<?php echo $product['idProducto']; ?>', 'vendido')">Vender</a></li>
                                                 <?php endif; ?>
                                             </ul>
                                         </div>
@@ -207,14 +206,16 @@ function getStarRating($rating) {
             </div>
         </div>
         
+        <!-- Pestaña Productos Vendidos -->
         <div class="tab-pane fade" id="vendidos" role="tabpanel" aria-labelledby="vendidos-tab">
             <?php
-            // Obtener productos vendidos (estado 'vendido')
-            $stmt = $conn->prepare("SELECT P.*, F.nombreFoto FROM Productos P 
-                                    LEFT JOIN Fotos F ON P.idProducto = F.idProducto 
-                                    LEFT JOIN Transacciones T ON P.idProducto = T.idProducto 
-                                    WHERE P.idUsuario = ? AND T.estado = 'vendido' 
-                                    GROUP BY P.idProducto");
+            // Obtener productos vendidos
+            $stmt = $conn->prepare("SELECT p.*, f.nombreFoto 
+                                    FROM productos p 
+                                    LEFT JOIN fotos f ON p.idProducto = f.idProducto 
+                                    LEFT JOIN transacciones t ON p.idProducto = t.idProducto 
+                                    WHERE t.idVendedor = ? AND t.estado = 'vendido' 
+                                    GROUP BY p.idProducto");
             $stmt->execute([$_SESSION['user_id']]);
             $productsSold = $stmt->fetchAll(PDO::FETCH_ASSOC);
             ?>
@@ -223,10 +224,10 @@ function getStarRating($rating) {
                 <?php if (!empty($productsSold)): ?>
                     <?php foreach ($productsSold as $product): ?>
                         <div class="col-md-4 mb-4">
-                            <div class="card">
-                                <div style="width: 100%; height: 300px; overflow: hidden;">
+                            <div class="card p-card">
+                                <div class="product-image-wrapper">
                                     <?php if (!empty($product['nombreFoto'])): ?>
-                                        <img src="<?php echo htmlspecialchars($product['nombreFoto']); ?>" class="card-img-top" alt="Foto del producto" style="height: 300px; width: 100%; object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars($product['nombreFoto']); ?>" class="card-img-top product-image" alt="Foto del producto">
                                     <?php else: ?>
                                         <p>No hay fotos disponibles</p>
                                     <?php endif; ?>
@@ -238,11 +239,10 @@ function getStarRating($rating) {
                                             <p class="card-text"><strong>Talla:</strong> <?php echo htmlspecialchars($product['talla']); ?></p>
                                         </div>
                                         <div class="dropdown">
-                                            <a class="text-danger" href="#" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
+                                            <a class="text-danger" href="#" id="dropdownMenuLink<?php echo $product['idProducto']; ?>" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-bars"></i>
                                             </a>
-                                            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
-                                                <li><a class="dropdown-item" style="color: red;" href="editar_producto.php?id=<?php echo $product['idProducto']; ?>">Editar</a></li>
+                                            <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdownMenuLink<?php echo $product['idProducto']; ?>">
                                                 <li><a class="dropdown-item" style="color: red;" href="#" onclick="borrarProducto('<?php echo $product['idProducto']; ?>')">Borrar</a></li>
                                             </ul>
                                         </div>
@@ -259,14 +259,16 @@ function getStarRating($rating) {
             </div>
         </div>
         
+        <!-- Pestaña Productos Comprados -->
         <div class="tab-pane fade" id="comprados" role="tabpanel" aria-labelledby="comprados-tab">
             <?php
             // Obtener productos comprados por el usuario (estado 'comprado')
-            $stmt = $conn->prepare("SELECT P.*, F.nombreFoto, T.fechaTransaccion FROM Productos P
-                                    LEFT JOIN Fotos F ON P.idProducto = F.idProducto
-                                    INNER JOIN Transacciones T ON P.idProducto = T.idProducto
-                                    WHERE T.idComprador = ? AND T.estado = 'comprado' 
-                                    GROUP BY P.idProducto");
+            $stmt = $conn->prepare("SELECT p.*, f.nombreFoto, t.fechaTransaccion 
+                                    FROM productos p
+                                    LEFT JOIN fotos f ON p.idProducto = f.idProducto
+                                    INNER JOIN transacciones t ON p.idProducto = t.idProducto
+                                    WHERE t.idComprador = ? AND t.estado = 'vendido' 
+                                    GROUP BY p.idProducto");
             $stmt->execute([$_SESSION['user_id']]);
             $purchases = $stmt->fetchAll(PDO::FETCH_ASSOC);
             ?>
@@ -275,10 +277,10 @@ function getStarRating($rating) {
                 <?php if (!empty($purchases)): ?>
                     <?php foreach ($purchases as $purchase): ?>
                         <div class="col-md-4 mb-4">
-                            <div class="card">
-                                <div style="width: 100%; height: 300px; overflow: hidden;">
+                            <div class="card p-card">
+                                <div class="product-image-wrapper">
                                     <?php if (!empty($purchase['nombreFoto'])): ?>
-                                        <img src="<?php echo htmlspecialchars($purchase['nombreFoto']); ?>" class="card-img-top" alt="Foto del producto" style="height: 300px; width: 100%; object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars($purchase['nombreFoto']); ?>" class="card-img-top product-image" alt="Foto del producto">
                                     <?php else: ?>
                                         <p>No hay fotos disponibles</p>
                                     <?php endif; ?>
@@ -291,12 +293,11 @@ function getStarRating($rating) {
                                             <p class="card-text"><strong>Fecha de Compra:</strong> <?php echo htmlspecialchars($purchase['fechaTransaccion']); ?></p>
                                         </div>
                                         <div class="dropdown">
-                                            <a class="text-danger" href="#" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
+                                            <a class="text-danger" href="#" id="dropdownMenuLink<?php echo $purchase['idProducto']; ?>" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-bars"></i>
                                             </a>
-                                            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
-                                               <li><a class="dropdown-item" style="color: red;" href="editar_producto.php?id=<?php echo $purchase['idProducto']; ?>">Editar</a></li>
-                                               <li><a class="dropdown-item" style="color: red;" onclick="borrarProducto('<?php echo $purchase['idProducto']; ?>')">Borrar</a></li>
+                                            <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdownMenuLink<?php echo $purchase['idProducto']; ?>">
+                                               <li><a class="dropdown-item" style="color: red;" href="#" onclick="borrarProducto('<?php echo $purchase['idProducto']; ?>')">Borrar</a></li>
                                             </ul>
                                         </div>
                                     </div>

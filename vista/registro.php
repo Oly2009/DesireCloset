@@ -1,6 +1,5 @@
 <?php
 session_start();
-require_once '../config/conexion.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nombreUsuario = $_POST['nombreUsuario'];
@@ -12,14 +11,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sexo = $_POST['sexo'];
     $fechaNacimiento = $_POST['fechaNacimiento'];
     $descripcion = $_POST['descripcion'];
-    $fotoPerfil = $_FILES['foto']['name'];
-    $dniFoto = $_FILES['dni']['name'];
-    $idRol = 2; // ID del rol "usuario"
+    $foto = $_FILES['foto']['name'];
+    $dni = $_FILES['dni']['name'];
 
     // Subir foto de perfil
-    if (!empty($fotoPerfil)) {
+    if (!empty($foto)) {
         $fotoTempPerfil = $_FILES['foto']['tmp_name'];
-        $hashedFotoPerfil = md5_file($fotoTempPerfil) . "_" . basename($fotoPerfil);
+        $hashedFotoPerfil = md5_file($fotoTempPerfil) . "_" . basename($foto);
         $rutaFotoPerfil = "../assets/uploads/$hashedFotoPerfil";
         if (!move_uploaded_file($fotoTempPerfil, $rutaFotoPerfil)) {
             $error = "Error al subir la foto de perfil.";
@@ -31,9 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Subir foto del DNI
-    if (!empty($dniFoto)) {
+    if (!empty($dni)) {
         $fotoTempDNI = $_FILES['dni']['tmp_name'];
-        $hashedFotoDNI = md5_file($fotoTempDNI) . "_" . basename($dniFoto);
+        $hashedFotoDNI = md5_file($fotoTempDNI) . "_" . basename($dni);
         $rutaFotoDNI = "../assets/uploads/$hashedFotoDNI";
         if (!move_uploaded_file($fotoTempDNI, $rutaFotoDNI)) {
             $error = "Error al subir la foto del DNI.";
@@ -44,79 +42,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $rutaFotoDNI = null;
     }
 
-    // Conectar a la base de datos
-    try {
-        $database = new Database();
-        $conn = $database->getConnection();
-    } catch (PDOException $e) {
-        die("Error en la conexión: " . $e->getMessage());
-    }
+    // Almacenar datos en la sesión
+    $_SESSION['nombreUsuario'] = $nombreUsuario;
+    $_SESSION['password'] = $password;
+    $_SESSION['email'] = $email;
+    $_SESSION['nombre'] = $nombre;
+    $_SESSION['apellidos1'] = $apellidos1;
+    $_SESSION['apellidos2'] = $apellidos2;
+    $_SESSION['sexo'] = $sexo;
+    $_SESSION['fechaNacimiento'] = $fechaNacimiento;
+    $_SESSION['descripcion'] = $descripcion;
+    $_SESSION['rutaFotoPerfil'] = $rutaFotoPerfil;
+    $_SESSION['rutaFotoDNI'] = $rutaFotoDNI;
 
-    try {
-        // Verificar si el correo electrónico ya está registrado
-        $stmt = $conn->prepare("SELECT idUsuario, fechaBaja FROM Usuarios WHERE email = ?");
-        $stmt->execute([$email]);
-        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($usuario) {
-            if (!is_null($usuario['fechaBaja'])) {
-                // Usuario está dado de baja, reactivar la cuenta
-                $stmt = $conn->prepare("UPDATE Usuarios SET nombreUsuario = ?, nombre = ?, apellidos1 = ?, apellidos2 = ?, password = ?, sexo = ?, fechaNacimiento = ?, descripcion = ?, foto = ?, fechaBaja = NULL WHERE idUsuario = ?");
-                $stmt->execute([$nombreUsuario, $nombre, $apellidos1, $apellidos2, $password, $sexo, $fechaNacimiento, $descripcion, $rutaFotoPerfil, $usuario['idUsuario']]);
-
-                // Actualizar el DNI en la tabla ValidacionDNI
-                $estado = 'pendiente';
-                $fechaValidacion = date('Y-m-d');
-                $stmt = $conn->prepare("UPDATE ValidacionDNI SET dni = ?, estado = ?, fechaValidacion = ? WHERE idUsuario = ?");
-                $stmt->execute([$rutaFotoDNI, $estado, $fechaValidacion, $usuario['idUsuario']]);
-                
-                // Redirigir a la página de pago
-                $_SESSION['user_id'] = $usuario['idUsuario'];
-                header('Location: pago.php');
-                exit();
-            } else {
-                throw new Exception("El correo electrónico ya está registrado. Por favor, utiliza otro correo electrónico.");
-            }
-        } else {
-            // Iniciar una transacción
-            $conn->beginTransaction();
-
-            // Insertar usuario en la tabla Usuarios
-            $stmt = $conn->prepare("INSERT INTO Usuarios (nombreUsuario, nombre, apellidos1, apellidos2, email, password, sexo, fechaNacimiento, descripcion, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$nombreUsuario, $nombre, $apellidos1, $apellidos2, $email, $password, $sexo, $fechaNacimiento, $descripcion, $rutaFotoPerfil]);
-            $idUsuario = $conn->lastInsertId();
-
-            // Asignar rol al usuario
-            $stmt = $conn->prepare("INSERT INTO Usuarios_Roles (idUsuario, idRol) VALUES (?, ?)");
-            $stmt->execute([$idUsuario, $idRol]);
-
-            // Insertar el DNI en la tabla ValidacionDNI
-            $estado = 'pendiente';
-            $fechaValidacion = date('Y-m-d');
-            $stmt = $conn->prepare("INSERT INTO ValidacionDNI (dni, estado, idUsuario, fechaValidacion) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$rutaFotoDNI, $estado, $idUsuario, $fechaValidacion]);
-
-            // Confirmar la transacción
-            $conn->commit();
-
-            // Redirigir a la página de pago
-            $_SESSION['user_id'] = $idUsuario;
-            header('Location: pago.php');
-            exit();
-        }
-    } catch (PDOException $e) {
-        // En caso de error, revertir la transacción
-        if ($conn->inTransaction()) {
-            $conn->rollBack();
-        }
-        $error = "Error en el registro: " . $e->getMessage();
-        header("Location: ../vista/registro.php?error=" . urlencode($error));
-        exit();
-    } catch (Exception $e) {
-        $error = "Error en el registro: " . $e->getMessage();
-        header("Location: ../vista/registro.php?error=" . urlencode($error));
-        exit();
-    }
+    // Redirigir a la página de pago
+    header('Location: pago.php');
+    exit();
 }
 ?>
 
@@ -128,8 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="alert alert-danger text-center"><?php echo $_GET['error']; ?></div>
     <?php endif; ?>
     <form id="registrationForm" action="registro.php" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-        <div class="row">
-        </div>
         <div class="row">
             <div class="col-md-6">
                 <h4 class="mb-3">DATOS DE CUENTA</h4>
@@ -167,14 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="apellidos2" class="form-label">Segundo Apellido</label>
                     <input type="text" class="form-control" id="apellidos2" name="apellidos2">
                 </div>
-                <div class="form-check mb-3">
-                    <input type="checkbox" class="form-check-input" id="terms" required>
-                    <label class="form-check-label" for="terms">Acepto los <a href="#">términos y condiciones legales</a></label>
-                </div>
-                <div class="form-check mb-3">
-                    <input type="checkbox" class="form-check-input" id="age" required>
-                    <label class="form-check-label" for="age">Acepto que soy mayor de edad</label>
-                </div>
             </div>
             <div class="col-md-6">
                 <h4 class="mb-3">DATOS PERFIL</h4>
@@ -206,6 +137,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="dni" class="form-label">Foto de DNI</label>
                     <input type="file" class="form-control" id="dni" name="dni" required>
                     <div class="invalid-feedback">Por favor, suba una foto de su DNI.</div>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="terms" required>
+                    <label class="form-check-label" for="terms">Acepto los <a href="../vista/condiciones.php">términos y condiciones legales</a></label>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="age" required>
+                    <label class="form-check-label" for="age">Acepto que soy mayor de edad</label>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="aceptarCookies" name="aceptarCookies">
+                    <label class="form-check-label text-danger" for="aceptarCookies">Acepto la política de cookies</label>
                 </div>
                 <button type="submit" class="btn btn-danger btn-block">REGISTRARSE</button>
             </div>

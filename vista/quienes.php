@@ -1,8 +1,8 @@
  <?php include '../includes/header.php'; ?>
-  <div class="container mt-5">
+  <div class="quienes container mt-5">
         <!-- Sección de Introducción -->
         <section id="intro" class="mb-5">
-            <div class="jumbotron text-center bg-white">
+            <div class=" quienes jumbotron text-center bg-white">
                 <h2 class="display-4">Conoce DesireCloset</h2>
                 <p class="lead">Somos una plataforma exclusiva donde puedes acceder a una red de contactos del mundo fetichista pagando una cuota anual. Aquí, los usuarios pueden subir y comprar productos de manera segura y anónima.</p>
                 <hr class="my-4">

@@ -2,20 +2,23 @@
 session_start();
 require_once '../config/conexion.php';
 
+// Conectar a la base de datos
 $database = new Database();
 $db = $database->getConnection();
 
+// Obtener el ID del usuario y el rol del usuario de la sesión
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-$user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'invitado'; 
+$user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'invitado';
 
-$query = "SELECT p.*, u.nombreUsuario, u.foto as fotoUsuario, f.nombreFoto, t.estado,
-          (SELECT COUNT(*) FROM MeGusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
-          (SELECT COUNT(*) FROM MeGusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = ?) AS userLikeCount
-          FROM Productos p
-          JOIN Usuarios u ON p.idUsuario = u.idUsuario
-          LEFT JOIN (SELECT nombreFoto, idProducto FROM Fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
-          LEFT JOIN Transacciones t ON p.idProducto = t.idProducto
-          WHERE p.idCategoria = (SELECT idCategoria FROM Categorias WHERE nombreCategoria = 'Fotos de pies')
+// Consulta para obtener los productos de la categoría "Fotos de pies"
+$query = "SELECT p.*, u.nombreUsuario, u.foto AS fotoUsuario, f.nombreFoto, t.estado,
+          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
+          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = ?) AS userLikeCount
+          FROM productos p
+          JOIN usuarios u ON p.idUsuario = u.idUsuario
+          LEFT JOIN (SELECT nombreFoto, idProducto FROM fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
+          LEFT JOIN transacciones t ON p.idProducto = t.idProducto
+          WHERE p.idCategoria = (SELECT idCategoria FROM categorias WHERE nombreCategoria = 'Fotos de pies')
           AND (t.estado IS NULL OR t.estado != 'vendido')
           GROUP BY p.idProducto";
 $stmt = $db->prepare($query);

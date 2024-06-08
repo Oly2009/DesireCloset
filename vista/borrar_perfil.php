@@ -15,10 +15,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete']) && $
         // Obtener ID del usuario
         $userId = $_SESSION['user_id'];
 
-        // Establecer la fecha de baja
+        // Establecer la fecha de baja y pagado en falso
         $fechaBaja = date('Y-m-d H:i:s');
-        $stmt = $conn->prepare("UPDATE Usuarios SET fechaBaja = ? WHERE idUsuario = ?");
+        $stmt = $conn->prepare("UPDATE usuarios SET fechaBaja = ?, pagado = 0 WHERE idUsuario = ?");
         $stmt->execute([$fechaBaja, $userId]);
+
+        // Obtener todos los productos del usuario para eliminar sus dependencias
+        $stmt = $conn->prepare("SELECT idProducto FROM productos WHERE idUsuario = ?");
+        $stmt->execute([$userId]);
+        $productos = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Eliminar dependencias de cada producto del usuario
+        foreach ($productos as $idProducto) {
+            $stmt = $conn->prepare("DELETE FROM megusta WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
+
+            $stmt = $conn->prepare("DELETE FROM fotos WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
+
+            $stmt = $conn->prepare("DELETE FROM transacciones WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
+
+            $stmt = $conn->prepare("DELETE FROM mensajes WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
+        }
+
+        // Eliminar productos del usuario
+        $stmt = $conn->prepare("DELETE FROM productos WHERE idUsuario = ?");
+        $stmt->execute([$userId]);
+
+        // Eliminar dependencias del usuario en las tablas relacionadas
+        $stmt = $conn->prepare("DELETE FROM fotos WHERE idUsuario = ?");
+        $stmt->execute([$userId]);
+
+        $stmt = $conn->prepare("DELETE FROM transacciones WHERE idComprador = ? OR idVendedor = ?");
+        $stmt->execute([$userId, $userId]);
+
+        $stmt = $conn->prepare("DELETE FROM mensajes WHERE idEmisor = ? OR idReceptor = ?");
+        $stmt->execute([$userId, $userId]);
+
+        $stmt = $conn->prepare("DELETE FROM valoraciones WHERE idValorado = ? OR idValorador = ?");
+        $stmt->execute([$userId, $userId]);
+
+        $stmt = $conn->prepare("DELETE FROM validaciondni WHERE idUsuario = ?");
+        $stmt->execute([$userId]);
+
+        $stmt = $conn->prepare("DELETE FROM megusta WHERE idUsuario = ?");
+        $stmt->execute([$userId]);
+
+        $stmt = $conn->prepare("DELETE FROM usuarios_roles WHERE idUsuario = ?");
+        $stmt->execute([$userId]);
 
         // Confirmar transacción
         $conn->commit();
@@ -36,32 +82,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete']) && $
     }
 }
 ?>
-
-<?php
-// Iniciar sesión
-session_start();
-
-// Verificar si el usuario está autenticado
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-?>
-
-<?php include '../includes/header.php'; ?>
-
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Borrar Perfil</h2>
-    <div class="alert alert-danger text-center" role="alert">
-        ¿Estás seguro de que deseas borrar tu perfil? Esta acción no se puede deshacer.
-    </div>
-    <div class="d-flex justify-content-center">
-        <form action="../controlador/borrar_perfil_controlador.php" method="post">
-            <input type="hidden" name="confirm_delete" value="yes">
-            <button type="submit" class="btn btn-danger mx-2">Sí, borrar mi perfil</button>
-            <a href="miperfil.php" class="btn btn-secondary mx-2">Cancelar</a>
-        </form>
-    </div>
-</div>
-
-<?php include '../includes/footer.php'; ?>

@@ -145,7 +145,7 @@
 
     <section class="mb-5">
         <h2 class="text-danger">Servicio de Renovación de Suscripciones</h2>
-        <p>Ya sabes que para poder publicar tus productos en la web has de abonar una de las tres suscripciones, cualquiera de ellas, muy económica.</p>
+        <p>Ya sabes que para poder publicar tus productos en la web has de abonar la suscripcion.</p>
         <p>Entre diez y veinte días antes de finalizar el periodo de suscripción elegido, recibirás un correo electrónico nuestro, avisándote de que va a finalizar y con las opciones de RENOVAR o CANCELAR. Si no lo cancelas, en la fecha que finalice la suscripción actual, se iniciará el proceso de renovación, momento en el que recibirás otro correo electrónico y un mensaje de WhatsApp, dándote tres días más de plazo para cancelar, por si acaso.</p>
         <p>Si no lo cancelas como muy tarde en ese momento, el proceso de renovación se hará efectivo y ya no será reembolsable el importe de esa renovación de suscripción.</p>
         <p>El derecho de desistimiento no será aplicable a los servicios de suscripción cuya ejecución haya comenzado independientemente del motivo por el que se pretenda desistir, salvo que se considere un error imputable a la plataforma que no pueda considerarse causa de fuerza mayor.</p>

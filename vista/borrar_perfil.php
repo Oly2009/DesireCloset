@@ -20,12 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete']) && $
         $stmt = $conn->prepare("UPDATE usuarios SET fechaBaja = ?, pagado = 0 WHERE idUsuario = ?");
         $stmt->execute([$fechaBaja, $userId]);
 
-        // Obtener todos los productos del usuario para eliminar sus dependencias
-        $stmt = $conn->prepare("SELECT idProducto FROM productos WHERE idUsuario = ?");
+        // Obtener todos los productos del usuario que no estén vendidos
+        $stmt = $conn->prepare("SELECT idProducto FROM productos WHERE idUsuario = ? AND idProducto NOT IN (SELECT idProducto FROM transacciones WHERE estado = 'vendido')");
         $stmt->execute([$userId]);
         $productos = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        // Eliminar dependencias de cada producto del usuario
+        // Eliminar dependencias de cada producto del usuario que no esté vendido
         foreach ($productos as $idProducto) {
             $stmt = $conn->prepare("DELETE FROM megusta WHERE idProducto = ?");
             $stmt->execute([$idProducto]);
@@ -33,26 +33,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete']) && $
             $stmt = $conn->prepare("DELETE FROM fotos WHERE idProducto = ?");
             $stmt->execute([$idProducto]);
 
-            $stmt = $conn->prepare("DELETE FROM transacciones WHERE idProducto = ?");
+            $stmt = $conn->prepare("DELETE FROM transacciones WHERE idProducto = ? AND estado != 'vendido'");
             $stmt->execute([$idProducto]);
 
             $stmt = $conn->prepare("DELETE FROM mensajes WHERE idProducto = ?");
             $stmt->execute([$idProducto]);
         }
 
-        // Eliminar productos del usuario
-        $stmt = $conn->prepare("DELETE FROM productos WHERE idUsuario = ?");
+        // Eliminar productos del usuario que no estén vendidos
+        $stmt = $conn->prepare("DELETE FROM productos WHERE idUsuario = ? AND idProducto NOT IN (SELECT idProducto FROM transacciones WHERE estado = 'vendido')");
         $stmt->execute([$userId]);
 
-        // Eliminar dependencias del usuario en las tablas relacionadas
-        $stmt = $conn->prepare("DELETE FROM fotos WHERE idUsuario = ?");
+        // Actualizar transacciones para establecer fotos del comprador en productos vendidos
+        $stmt = $conn->prepare("UPDATE fotos SET idUsuario = (SELECT idComprador FROM transacciones WHERE idProducto = fotos.idProducto AND estado = 'vendido') WHERE idProducto IN (SELECT idProducto FROM transacciones WHERE idVendedor = ? AND estado = 'vendido')");
         $stmt->execute([$userId]);
 
-        $stmt = $conn->prepare("DELETE FROM transacciones WHERE idComprador = ? OR idVendedor = ?");
-        $stmt->execute([$userId, $userId]);
-
-        $stmt = $conn->prepare("DELETE FROM mensajes WHERE idEmisor = ? OR idReceptor = ?");
-        $stmt->execute([$userId, $userId]);
+        // Eliminar otras dependencias del usuario en las tablas relacionadas, excepto usuarios_roles
+        $stmt = $conn->prepare("DELETE FROM fotos WHERE idUsuario = ? AND idProducto NOT IN (SELECT idProducto FROM transacciones WHERE estado = 'vendido')");
+        $stmt->execute([$userId]);
 
         $stmt = $conn->prepare("DELETE FROM valoraciones WHERE idValorado = ? OR idValorador = ?");
         $stmt->execute([$userId, $userId]);
@@ -61,9 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete']) && $
         $stmt->execute([$userId]);
 
         $stmt = $conn->prepare("DELETE FROM megusta WHERE idUsuario = ?");
-        $stmt->execute([$userId]);
-
-        $stmt = $conn->prepare("DELETE FROM usuarios_roles WHERE idUsuario = ?");
         $stmt->execute([$userId]);
 
         // Confirmar transacción

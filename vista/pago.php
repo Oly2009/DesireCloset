@@ -22,39 +22,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $conn->beginTransaction();
 
                 // Verificar si el correo electrónico ya existe en la base de datos
-                $query = "SELECT idUsuario FROM usuarios WHERE email = :email";
+                $query = "SELECT idUsuario, fechaBaja, pagado FROM usuarios WHERE email = :email";
                 $stmt = $conn->prepare($query);
                 $stmt->bindParam(':email', $_SESSION['email']);
                 $stmt->execute();
 
                 if ($stmt->rowCount() == 1) {
-                    // El correo electrónico ya existe, actualizar los datos del usuario
                     $row = $stmt->fetch(PDO::FETCH_ASSOC);
                     $idUsuario = $row['idUsuario'];
+                    $fechaBaja = $row['fechaBaja'];
+                    $pagado = $row['pagado'];
 
-                    $query = "UPDATE usuarios 
-                              SET nombreUsuario = :nombreUsuario, password = :password, nombre = :nombre, apellidos1 = :apellidos1, apellidos2 = :apellidos2, sexo = :sexo, descripcion = :descripcion, fechaNacimiento = :fechaNacimiento, foto = :foto, pagado = 1 
-                              WHERE idUsuario = :idUsuario";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bindParam(':nombreUsuario', $_SESSION['nombreUsuario']);
-                    $stmt->bindParam(':password', $_SESSION['password']);
-                    $stmt->bindParam(':nombre', $_SESSION['nombre']);
-                    $stmt->bindParam(':apellidos1', $_SESSION['apellidos1']);
-                    $stmt->bindParam(':apellidos2', $_SESSION['apellidos2']);
-                    $stmt->bindParam(':sexo', $_SESSION['sexo']);
-                    $stmt->bindParam(':descripcion', $_SESSION['descripcion']);
-                    $stmt->bindParam(':fechaNacimiento', $_SESSION['fechaNacimiento']);
-                    $stmt->bindParam(':foto', $_SESSION['rutaFotoPerfil']);
-                    $stmt->bindParam(':idUsuario', $idUsuario);
-                    $stmt->execute();
-
-                    // Actualizar validación de DNI
-                    if ($_SESSION['rutaFotoDNI']) {
-                        $query = "UPDATE validaciondni SET dni = :dni, estado = 'pendiente', fechaValidacion = NOW() WHERE idUsuario = :idUsuario";
+                    if (!is_null($fechaBaja) && !$pagado) {
+                        // El correo electrónico ya existe y el usuario está dado de baja, actualizar los datos del usuario
+                        $query = "UPDATE usuarios 
+                                  SET nombreUsuario = :nombreUsuario, password = :password, nombre = :nombre, apellidos1 = :apellidos1, apellidos2 = :apellidos2, sexo = :sexo, descripcion = :descripcion, fechaNacimiento = :fechaNacimiento, foto = :foto, pagado = 1, fechaBaja = NULL 
+                                  WHERE idUsuario = :idUsuario";
                         $stmt = $conn->prepare($query);
-                        $stmt->bindParam(':dni', $_SESSION['rutaFotoDNI']);
+                        $stmt->bindParam(':nombreUsuario', $_SESSION['nombreUsuario']);
+                        $stmt->bindParam(':password', $_SESSION['password']);
+                        $stmt->bindParam(':nombre', $_SESSION['nombre']);
+                        $stmt->bindParam(':apellidos1', $_SESSION['apellidos1']);
+                        $stmt->bindParam(':apellidos2', $_SESSION['apellidos2']);
+                        $stmt->bindParam(':sexo', $_SESSION['sexo']);
+                        $stmt->bindParam(':descripcion', $_SESSION['descripcion']);
+                        $stmt->bindParam(':fechaNacimiento', $_SESSION['fechaNacimiento']);
+                        $stmt->bindParam(':foto', $_SESSION['rutaFotoPerfil']);
                         $stmt->bindParam(':idUsuario', $idUsuario);
                         $stmt->execute();
+
+                        // Actualizar validación de DNI
+                        if ($_SESSION['rutaFotoDNI']) {
+                            $query = "UPDATE validaciondni SET dni = :dni, estado = 'pendiente', fechaValidacion = NOW() WHERE idUsuario = :idUsuario";
+                            $stmt = $conn->prepare($query);
+                            $stmt->bindParam(':dni', $_SESSION['rutaFotoDNI']);
+                            $stmt->bindParam(':idUsuario', $idUsuario);
+                            $stmt->execute();
+                        }
+
+                    } else {
+                        throw new Exception("El correo electrónico ya está registrado. Por favor, utiliza otro correo electrónico.");
                     }
 
                 } else {

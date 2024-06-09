@@ -104,12 +104,12 @@ include '../includes/header.php';
         </div>
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header text-center position-relative">
+                <div class="card-header text-center">
                     Información de Pago
-                    <button type="button" class="btn-close position-absolute end-0 top-0 m-2" aria-label="Close" onclick="window.location.href = '<?php echo $categoryPage; ?>';"></button>
+                    <button type="button" class="btn-close" aria-label="Close" onclick="window.location.href='<?php echo $categoryPage; ?>'" style="position: absolute; right: 15px;"></button>
                 </div>
                 <div class="card-body">
-                    <form id="paymentForm" method="post" novalidate>
+                    <form method="post" id="paymentForm">
                         <div class="mb-3">
                             <label for="cardNumber" class="form-label">Número de Tarjeta</label>
                             <input type="text" class="form-control" id="cardNumber" name="cardNumber" maxlength="19" placeholder="XXXX XXXX XXXX XXXX" required>
@@ -130,9 +130,8 @@ include '../includes/header.php';
                             <input type="text" class="form-control" id="cvv" name="cvv" maxlength="4" placeholder="CVV" required>
                             <div class="invalid-feedback">Por favor, ingrese un CVV válido (3 o 4 dígitos).</div>
                         </div>
-                        <div class="text-center">
-                            <button type="submit" name="pay" class="btn btn-primary w-100">Pagar</button>
-                           
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="pay" class="btn btn-primary">Pagar</button>
                         </div>
                     </form>
                     <?php if (isset($successMessage)): ?>
@@ -161,11 +160,7 @@ include '../includes/header.php';
 
 <script>
 document.getElementById('paymentForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    var form = this;
-
-    // Validación de los campos del formulario
-    var cardNumber = document.getElementById('cardNumber').value;
+    var cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
     var cardName = document.getElementById('cardName').value;
     var expiryDate = document.getElementById('expiryDate').value;
     var cvv = document.getElementById('cvv').value;
@@ -174,49 +169,22 @@ document.getElementById('paymentForm').addEventListener('submit', function(event
     var expiryDateRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
     var cvvRegex = /^\d{3,4}$/;
 
-    if (!cardNumberRegex.test(cardNumber.replace(/\s+/g, ''))) {
-        document.getElementById('cardNumber').classList.add('is-invalid');
+    if (!cardNumberRegex.test(cardNumber)) {
+        event.preventDefault();
         Swal.fire('Error', 'Número de tarjeta inválido', 'error');
         return;
-    } else {
-        document.getElementById('cardNumber').classList.remove('is-invalid');
     }
 
     if (!expiryDateRegex.test(expiryDate)) {
-        document.getElementById('expiryDate').classList.add('is-invalid');
+        event.preventDefault();
         Swal.fire('Error', 'Fecha de expiración inválida', 'error');
         return;
-    } else {
-        document.getElementById('expiryDate').classList.remove('is-invalid');
     }
 
     if (!cvvRegex.test(cvv)) {
-        document.getElementById('cvv').classList.add('is-invalid');
+        event.preventDefault();
         Swal.fire('Error', 'CVV inválido', 'error');
         return;
-    } else {
-        document.getElementById('cvv').classList.remove('is-invalid');
     }
-
-    Swal.fire({
-        title: 'Confirmar pago',
-        text: "Confirmar pago de €" + "<?php echo htmlspecialchars($product['precio']); ?>",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, pagar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire(
-                'Pago realizado!',
-                'Tu pago ha sido realizado con éxito.',
-                'success'
-            ).then(() => {
-                form.submit(); // Enviar el formulario al backend para completar el registro
-            });
-        }
-    });
 });
 </script>

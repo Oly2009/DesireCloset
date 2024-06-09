@@ -7,26 +7,39 @@ $conn = $database->getConnection();
 // Procesar eliminación del producto si se ha enviado el formulario
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'borrarProducto') {
     $idProducto = $_POST['idProducto'];
-    
+
     // Iniciar una transacción
     $conn->beginTransaction();
 
     try {
-        // Eliminar fotos asociadas al producto
-        $stmt = $conn->prepare("DELETE FROM fotos WHERE idProducto = ?");
+        // Verificar si el producto ha sido vendido
+        $stmt = $conn->prepare("SELECT estado FROM transacciones WHERE idProducto = ? AND estado = 'vendido'");
         $stmt->execute([$idProducto]);
 
-        // Eliminar transacciones asociadas al producto
-        $stmt = $conn->prepare("DELETE FROM transacciones WHERE idProducto = ?");
-        $stmt->execute([$idProducto]);
+        if ($stmt->rowCount() > 0) {
+            // Si el producto ha sido vendido, no eliminar el producto
+            throw new Exception("No se puede eliminar el producto porque ha sido vendido.");
+        } else {
+            // Eliminar dependencias del producto en la tabla 'megusta'
+            $stmt = $conn->prepare("DELETE FROM megusta WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
 
-        // Eliminar el producto
-        $stmt = $conn->prepare("DELETE FROM productos WHERE idProducto = ?");
-        $stmt->execute([$idProducto]);
+            // Eliminar fotos asociadas al producto
+            $stmt = $conn->prepare("DELETE FROM fotos WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
 
-        // Confirmar la transacción
-        $conn->commit();
-        $success_message = "Producto y todas sus dependencias han sido eliminadas.";
+            // Eliminar transacciones asociadas al producto
+            $stmt = $conn->prepare("DELETE FROM transacciones WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
+
+            // Eliminar el producto
+            $stmt = $conn->prepare("DELETE FROM productos WHERE idProducto = ?");
+            $stmt->execute([$idProducto]);
+
+            // Confirmar la transacción
+            $conn->commit();
+            $success_message = "Producto y todas sus dependencias han sido eliminadas.";
+        }
     } catch (Exception $e) {
         // Revertir la transacción en caso de error
         $conn->rollBack();

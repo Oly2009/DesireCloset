@@ -75,6 +75,7 @@ include '../includes/header_admin.php';
             <a href="ver_productos.php" class="list-group-item list-group-item-action bg-dark text-white">Productos</a>
             <a href="estadistica_productos.php" class="list-group-item list-group-item-action bg-dark text-white">Estadística</a>
             <a href="verificar_dni.php" class="list-group-item list-group-item-action bg-dark text-white">Verificar DNI</a>
+            <a href="modificartablas.php" class="list-group-item list-group-item-action bg-dark text-white">Modificar BD</a>
             <a href="logout.php" class="list-group-item list-group-item-action bg-dark text-white">Cerrar Sesión</a>
         </div>
     </div>

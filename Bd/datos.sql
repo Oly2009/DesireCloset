@@ -21,7 +21,6 @@ CREATE TABLE usuarios (
     fechaNacimiento DATE,
     fechaRegistro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fechaBaja TIMESTAMP NULL,
-    calificacion INT(5),
     foto VARCHAR(255) DEFAULT NULL,
     pagado BOOLEAN DEFAULT FALSE
 );

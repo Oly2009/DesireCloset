@@ -19,7 +19,7 @@
                 <div class="card-body">
                     <img src="./assets/img/logo.jpg" alt="Logo" class="mb-3" style="width: 100px;">
                     <h1 class="card-title text-danger">¿Eres mayor de edad?</h1>
-                    <p class="text-danger mb-4">Debes ser mayor de 18 años para acceder a este sitio. Por favor, introduce tu fecha de nacimiento para continuar.</p>
+                    <p class="text-danger mb-4"> Por favor, introduce tu fecha de nacimiento para continuar.</p>
                     <form id="ageForm" action="vista/principal.php" method="POST">
                         <div class="row mb-3 text-danger">
                             <div class="col">
@@ -37,7 +37,7 @@
                         </div>
                         <button type="button" onclick="validarEdad()" class="btn btn-danger">Comprobar</button>
                     </form>
-                    <p class="text-danger mt-4"><strong>Advertencia:</strong> El contenido de este sitio es solo para adultos. Debes ser mayor de 18 años para ingresar.</p>
+                    <p class="text-danger mt-4"><strong>Advertencia:</strong> El contenido de este sitio es solo para adultos. </p>
                     <p class="text-danger mt-4">Este sitio web contiene material explícito que puede no ser adecuado para menores de edad. El acceso está estrictamente prohibido para personas menores de 18 años. Al ingresar, confirmas que eres mayor de 18 años y aceptas nuestra política de privacidad y términos de uso.</p>
                 </div>
             </div>

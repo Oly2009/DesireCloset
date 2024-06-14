@@ -5,15 +5,6 @@ $database = new Database();
 $conn = $database->getConnection();
 
 try {
-    // Verificar si la columna fechaRegistro existe en la tabla productos
-    $columnCheck = $conn->query("SHOW COLUMNS FROM productos LIKE 'fechaRegistro'");
-    $columnExists = $columnCheck->rowCount() > 0;
-
-    if (!$columnExists) {
-        // Agregar la columna fechaRegistro a la tabla productos si no existe
-        $conn->exec("ALTER TABLE productos ADD fechaRegistro TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-    }
-
     // Obtener productos por estado y mes usando la fecha de registro de productos
     $query = "
         SELECT 
@@ -48,7 +39,6 @@ try {
 include '../includes/header_admin.php';
 ?>
 
-
 <div class="admin d-flex" id="wrapper" style="min-height: 100vh; overflow-x: hidden;">
     <!-- Sidebar -->
     <div class="bg-dark border-right" id="sidebar-wrapper" style="width: 150px;">
@@ -79,46 +69,47 @@ include '../includes/header_admin.php';
 </div>
 <!-- /#wrapper -->
 
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Chart.js para productos mensuales
-    const ctx = document.getElementById('productosMensualesChart').getContext('2d');
-    const productosMensualesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-            datasets: [
-                {
-                    label: 'Total Productos',
-                    data: <?php echo json_encode($totalProductos); ?>,
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Productos Vendidos',
-                    data: <?php echo json_encode($vendidosPorMes); ?>,
-                    backgroundColor: 'rgba(220, 53, 69, 0.5)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Productos Reservados',
-                    data: <?php echo json_encode($reservadosPorMes); ?>,
-                    backgroundColor: 'rgba(255, 206, 86, 0.5)',
-                    borderColor: 'rgba(255, 206, 86, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+    document.addEventListener('DOMContentLoaded', function () {
+        // Chart.js para productos mensuales
+        const ctx = document.getElementById('productosMensualesChart').getContext('2d');
+        const productosMensualesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                datasets: [
+                    {
+                        label: 'Total Productos',
+                        data: <?php echo json_encode($totalProductos); ?>,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Productos Vendidos',
+                        data: <?php echo json_encode($vendidosPorMes); ?>,
+                        backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Productos Reservados',
+                        data: <?php echo json_encode($reservadosPorMes); ?>,
+                        backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
+        });
     });
 </script>
 

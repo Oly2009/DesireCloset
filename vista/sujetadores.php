@@ -27,7 +27,7 @@ include '../includes/header.php';
 
 <div class="ver container mt-5">
     <div style="background-color: black; color: white; padding: 10px; margin-bottom: 20px;">
-        <h2 class="mb-4" style="text-transform: uppercase; font-weight: bold; text-align: center;">Sujetadores</h2>
+        <h2 class="mb-4" style="text-transform: uppercase; font-weight: bold; text-align: center;">Sujetadores y Lencería</h2>
     </div>
     <div class="row">
         <?php foreach ($products as $product): ?>

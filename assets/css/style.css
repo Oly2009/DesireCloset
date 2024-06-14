@@ -14,6 +14,8 @@ body, html {
     color: var(--text-color);
 }
 
+
+
 .index {
     background-image: url('../img/inicio.jpg'); /* Ruta de la imagen de fondo */
     background-color: var(--background-color);
@@ -21,7 +23,14 @@ body, html {
     background-position: center; /* Centra la imagen */
     background-repeat: no-repeat; /* Evita que la imagen se repita */
     background-attachment: fixed; /* La imagen se queda fija en el fondo */
+   
 }
+   .index {
+            pointer-events: none; /* Deshabilitar los eventos hover */
+        }
+        .index * {
+            pointer-events: auto; /* Habilitar los eventos hover para los hijos del div */
+        }
 
 a {
     color: var(--primary-color);
@@ -29,7 +38,7 @@ a {
 }
 
 a:hover {
-    text-decoration: underline; /* Añade un subrayado al pasar el ratón por encima para mejorar la accesibilidad */
+    text-decoration: underline; 
 }
 
 /* Encabezado y pie de página */

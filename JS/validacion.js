@@ -1,19 +1,20 @@
 'use strict';
 
-// Función para validar formularios con Bootstrap
-function initializeFormValidation() {
-    var forms = document.getElementsByClassName('needs-validation');
-    Array.prototype.filter.call(forms, function(form) {
-        form.addEventListener('submit', function(event) {
-            if (form.checkValidity() === false) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
+(function () {
+      
+        window.addEventListener('load', function () {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
         }, false);
-    });
-}
-
+    })();
 // Función para previsualizar la imagen de perfil
 function previewImage(event) {
     var reader = new FileReader();
@@ -26,7 +27,7 @@ function previewImage(event) {
 }
 //Funcion para editar el perfil 
   (function() {
-        'use strict';
+       
         window.addEventListener('load', function() {
             var forms = document.getElementsByClassName('needs-validation');
             Array.prototype.filter.call(forms, function(form) {
@@ -40,6 +41,8 @@ function previewImage(event) {
             });
         }, false);
     })();
+    
+    
 // Función para manejar la vista previa de las fotos del producto
 function handleFileSelect(evt) {
     var preview = document.getElementById('preview');
@@ -189,22 +192,31 @@ document.addEventListener('DOMContentLoaded', function () {
  
      
 
-//borrar perfil
-
-document.getElementById('deleteProfileLink').addEventListener('click', function(event) {
-    event.preventDefault();
-    Swal.fire({
-        title: '¿Estás seguro?',
-        text: "¡No podrás revertir esto!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, bórralo!',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = 'borrar_perfil.php';
-        }
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    var deleteProfileLink = document.getElementById('deleteProfileLink');
+    
+    if (deleteProfileLink) {
+        deleteProfileLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, bórralo!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('deleteProfileForm').submit();
+                }
+            });
+        });
+    }
 });
+
+
+
+
+

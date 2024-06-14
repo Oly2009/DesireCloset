@@ -44,8 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete']) && $
         $stmt = $conn->prepare("DELETE FROM productos WHERE idUsuario = ? AND idProducto NOT IN (SELECT idProducto FROM transacciones WHERE estado = 'vendido')");
         $stmt->execute([$userId]);
 
-        // Actualizar transacciones para establecer fotos del comprador en productos vendidos
-        $stmt = $conn->prepare("UPDATE fotos SET idUsuario = (SELECT idComprador FROM transacciones WHERE idProducto = fotos.idProducto AND estado = 'vendido') WHERE idProducto IN (SELECT idProducto FROM transacciones WHERE idVendedor = ? AND estado = 'vendido')");
+        // Anonimizar referencias en transacciones vendidas
+        $stmt = $conn->prepare("UPDATE transacciones SET idVendedor = NULL WHERE idVendedor = ?");
+        $stmt->execute([$userId]);
+        $stmt = $conn->prepare("UPDATE transacciones SET idComprador = NULL WHERE idComprador = ?");
         $stmt->execute([$userId]);
 
         // Eliminar otras dependencias del usuario en las tablas relacionadas, excepto usuarios_roles

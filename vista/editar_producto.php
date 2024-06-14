@@ -39,6 +39,12 @@ if (isset($_GET['id'])) {
     $stmtFotos->bindParam(':idProducto', $idProducto);
     $stmtFotos->execute();
     $fotos = $stmtFotos->fetchAll(PDO::FETCH_ASSOC);
+
+    // Obtener las categorías
+    $queryCategorias = "SELECT idCategoria, nombreCategoria FROM categorias";
+    $stmtCategorias = $conn->prepare($queryCategorias);
+    $stmtCategorias->execute();
+    $categorias = $stmtCategorias->fetchAll(PDO::FETCH_ASSOC);
 } else {
     header("Location: perfil.php");
     exit();
@@ -51,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $descripcion = $_POST['descripcion'];
     $precio = $_POST['precio'];
     $condicion = $_POST['condicion'];
+    $idCategoria = $_POST['idCategoria'];
     $idUsuario = $_SESSION['user_id'];
 
     // Manejo de las fotos del producto
@@ -94,13 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (empty($error_message)) {
-        $query = "UPDATE productos SET nombreProducto = :nombreProducto, talla = :talla, descripcion = :descripcion, precio = :precio, condicion = :condicion WHERE idProducto = :idProducto";
+        $query = "UPDATE productos SET nombreProducto = :nombreProducto, talla = :talla, descripcion = :descripcion, precio = :precio, condicion = :condicion, idCategoria = :idCategoria WHERE idProducto = :idProducto";
         $stmt = $conn->prepare($query);
         $stmt->bindParam(':nombreProducto', $nombreProducto);
         $stmt->bindParam(':talla', $talla);
         $stmt->bindParam(':descripcion', $descripcion);
         $stmt->bindParam(':precio', $precio);
         $stmt->bindParam(':condicion', $condicion);
+        $stmt->bindParam(':idCategoria', $idCategoria);
         $stmt->bindParam(':idProducto', $idProducto);
 
         if ($stmt->execute()) {
@@ -191,21 +199,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <input type="text" class="form-control" id="condicion" name="condicion" value="<?= htmlspecialchars($producto['condicion']) ?>" required>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="idCategoria" class="form-label">Categoría</label>
+                    <select class="form-select" id="idCategoria" name="idCategoria" required>
+                        <?php foreach ($categorias as $categoria): ?>
+                            <option value="<?= $categoria['idCategoria'] ?>" <?= $categoria['idCategoria'] == $producto['idCategoria'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($categoria['nombreCategoria']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
             <div class="mb-3">
                 <label for="fotos1" class="form-label">Foto 1</label>
-                <input type="file" class="form-control" id="fotos1" name="fotos[]" onchange="previewFotos(event, 'preview1')" required>
+                <input type="file" class="form-control" id="fotos1" name="fotos[]" onchange="previewFotos(event, 'preview1')">
+                <div id="preview1" class="mb-3"></div>
             </div>
             <div class="mb-3">
                 <label for="fotos2" class="form-label">Foto 2</label>
                 <input type="file" class="form-control" id="fotos2" name="fotos[]" onchange="previewFotos(event, 'preview2')">
+                <div id="preview2" class="mb-3"></div>
             </div>
             <div class="mb-3">
                 <label for="fotos3" class="form-label">Foto 3</label>
                 <input type="file" class="form-control" id="fotos3" name="fotos[]" onchange="previewFotos(event, 'preview3')">
+                <div id="preview3" class="mb-3"></div>
             </div>
-            <div id="preview1" class="mb-3"></div>
-            <div id="preview2" class="mb-3"></div>
-            <div id="preview3" class="mb-3"></div>
             <div class="mt-2">
                 <strong>Fotos actuales:</strong>
                 <?php

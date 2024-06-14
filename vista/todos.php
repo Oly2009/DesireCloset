@@ -5,63 +5,58 @@ require_once '../config/conexion.php';
 $database = new Database();
 $db = $database->getConnection();
 
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-$user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'invitado'; // Asigna 'invitado' por defecto si no está autenticado
+$user_id = $_SESSION['user_id'] ?? null;
+$user_role = $_SESSION['user_role'] ?? 'invitado';
+$searchTerm = $_GET['busqueda'] ?? '';
 
-$searchTerm = isset($_GET['busqueda']) ? $_GET['busqueda'] : '';
-
-$products = [];
-$users = [];
-
-if (!empty($searchTerm)) {
-    // Buscar usuarios
-    $stmt = $db->prepare("SELECT u.*, ur.idRol, 
-                            (SELECT AVG(valoracion) FROM valoraciones WHERE idValorado = u.idUsuario) as ratingAverage 
-                          FROM usuarios u
-                          JOIN usuarios_roles ur ON u.idUsuario = ur.idUsuario
-                          WHERE (u.nombreUsuario LIKE ? OR u.nombre LIKE ?)
-                          AND u.pagado = 1 AND ur.idRol = 2 AND u.fechaBaja IS NULL");
-    $stmt->execute(['%' . $searchTerm . '%', '%' . $searchTerm . '%']);
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Buscar productos
-    $stmt = $db->prepare("SELECT p.*, u.nombreUsuario, u.foto as fotoUsuario, f.nombreFoto, t.estado,
-                          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
-                          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = ?) AS userLikeCount
-                          FROM productos p
-                          JOIN usuarios u ON p.idUsuario = u.idUsuario
-                          LEFT JOIN (SELECT nombreFoto, idProducto FROM fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
-                          LEFT JOIN transacciones t ON p.idProducto = t.idProducto
-                          WHERE (p.nombreProducto LIKE ? OR p.descripcion LIKE ?)
-                          AND (t.estado IS NULL OR t.estado != 'vendido')
-                          GROUP BY p.idProducto");
-    $stmt->execute([$user_id, '%' . $searchTerm . '%', '%' . $searchTerm . '%']);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    // Fetch all products if no search term
-    $stmt = $db->prepare("SELECT p.*, u.nombreUsuario, u.foto as fotoUsuario, f.nombreFoto, t.estado,
-                          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
-                          (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = ?) AS userLikeCount
-                          FROM productos p
-                          JOIN usuarios u ON p.idUsuario = u.idUsuario
-                          LEFT JOIN (SELECT nombreFoto, idProducto FROM fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
-                          LEFT JOIN transacciones t ON p.idProducto = t.idProducto
-                          WHERE t.estado IS NULL OR t.estado != 'vendido'
-                          GROUP BY p.idProducto");
-    $stmt->execute([$user_id]);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fetch all users if no search term
-    $stmt = $db->prepare("SELECT u.*, ur.idRol, 
-                            (SELECT AVG(valoracion) FROM valoraciones WHERE idValorado = u.idUsuario) as ratingAverage 
-                          FROM usuarios u
-                          JOIN usuarios_roles ur ON u.idUsuario = ur.idUsuario
-                          WHERE u.pagado = 1 AND ur.idRol = 2 AND u.fechaBaja IS NULL");
-    $stmt->execute();
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+$products = fetchProducts($db, $user_id, $searchTerm);
+$users = fetchUsers($db, $searchTerm);
 
 include '../includes/header.php';
+
+function fetchProducts($db, $user_id, $searchTerm) {
+    $query = "SELECT p.*, u.nombreUsuario, u.foto as fotoUsuario, f.nombreFoto, t.estado,
+              (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto) AS likeCount,
+              (SELECT COUNT(*) FROM megusta mg WHERE mg.idProducto = p.idProducto AND mg.idUsuario = :user_id) AS userLikeCount
+              FROM productos p
+              JOIN usuarios u ON p.idUsuario = u.idUsuario
+              LEFT JOIN (SELECT nombreFoto, idProducto FROM fotos GROUP BY idProducto) f ON p.idProducto = f.idProducto
+              LEFT JOIN transacciones t ON p.idProducto = t.idProducto
+              WHERE (t.estado IS NULL OR t.estado != 'vendido')";
+    
+    if (!empty($searchTerm)) {
+        $query .= " AND (p.nombreProducto LIKE :searchTerm OR p.descripcion LIKE :searchTerm)";
+    }
+    
+    $query .= " GROUP BY p.idProducto";
+
+    $stmt = $db->prepare($query);
+    $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+    if (!empty($searchTerm)) {
+        $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%', PDO::PARAM_STR);
+    }
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function fetchUsers($db, $searchTerm) {
+    $query = "SELECT u.*, ur.idRol, 
+              (SELECT AVG(valoracion) FROM valoraciones WHERE idValorado = u.idUsuario) as ratingAverage 
+              FROM usuarios u
+              JOIN usuarios_roles ur ON u.idUsuario = ur.idUsuario
+              WHERE u.pagado = 1 AND ur.idRol = 2 AND u.fechaBaja IS NULL";
+
+    if (!empty($searchTerm)) {
+        $query .= " AND (u.nombreUsuario LIKE :searchTerm OR u.nombre LIKE :searchTerm)";
+    }
+
+    $stmt = $db->prepare($query);
+    if (!empty($searchTerm)) {
+        $stmt->bindValue(':searchTerm', '%' . $searchTerm . '%', PDO::PARAM_STR);
+    }
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 function getStarRating($rating) {
     $stars = '';

@@ -30,6 +30,9 @@ if (!empty($searchTerm)) {
         header('Location: soporte.php');
     } elseif (stripos($searchTerm, 'seguridad') !== false) {
         header('Location: consejosseguridad.php');
+    } elseif (preg_match('/^[a-zA-Z0-9]+$/', $searchTerm)) {
+        // Buscar por talla exacta si el término de búsqueda coincide con el formato de talla
+        header('Location: todos.php?busqueda=' . urlencode($searchTerm) . '&tipo=talla');
     } else {
         // Si no coincide con ninguna categoría específica, buscar en todos los productos y usuarios
         header('Location: todos.php?busqueda=' . urlencode($searchTerm));

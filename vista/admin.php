@@ -1,45 +1,62 @@
 <?php
+// Iniciar la sesión para poder utilizar las variables de sesión
 session_start();
+
+// Incluir el archivo de conexión a la base de datos
 require_once '../config/conexion.php';
 
-// Verificar si el usuario es un administrador
+// Verificar si el usuario ha iniciado sesión y si es un administrador
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
+    // Si no es administrador, redirigir al login
     header('Location: login.php');
     exit();
 }
 
+// Crear una instancia de la clase Database y obtener la conexión
 $database = new Database();
 $conn = $database->getConnection();
 
-// Obtener datos de la base de datos
+// Inicializar las variables para almacenar los datos
+$totalUsuarios = 0;
+$totalProductosEnVenta = 0;
+$totalProductosVendidos = 0;
+$totalIngresos = 0;
+$ingresosMensuales = array_fill(0, 12, 0); // Array para los ingresos mensuales
+
+// Intentar obtener los datos de la base de datos
 try {
-    // Total de usuarios no administradores (excluyendo admins)
+    // Consulta para obtener el total de usuarios no administradores
     $stmt = $conn->query("
         SELECT COUNT(*) 
         FROM usuarios u
         JOIN usuarios_roles ur ON u.idusuario = ur.idusuario
         WHERE ur.idrol = 2
     ");
-    $totalUsuarios = $stmt->fetchColumn();
+    $totalUsuarios = $stmt->fetchColumn(); // Guardar el resultado en la variable
 
-    // Total de productos en venta
-    $stmt = $conn->query("SELECT COUNT(*) FROM productos p LEFT JOIN transacciones t ON p.idProducto = t.idProducto WHERE t.estado IS NULL OR t.estado = 'enventa'");
-    $totalProductosEnVenta = $stmt->fetchColumn();
+    // Consulta para obtener el total de productos en venta
+    $stmt = $conn->query("
+        SELECT COUNT(*) 
+        FROM productos p 
+        LEFT JOIN transacciones t ON p.idProducto = t.idProducto 
+        WHERE t.estado IS NULL OR t.estado = 'enventa'
+    ");
+    $totalProductosEnVenta = $stmt->fetchColumn(); // Guardar el resultado en la variable
 
-    // Total de productos vendidos
+    // Consulta para obtener el total de productos vendidos
     $stmt = $conn->query("SELECT COUNT(*) FROM transacciones WHERE estado = 'vendido'");
-    $totalProductosVendidos = $stmt->fetchColumn();
+    $totalProductosVendidos = $stmt->fetchColumn(); // Guardar el resultado en la variable
 
-    // Total de ingresos de todos los usuarios (excepto admins)
+    // Consulta para calcular los ingresos totales (106 es el ingreso por usuario)
     $stmt = $conn->query("
         SELECT COUNT(*) * 106 AS totalIngresos
         FROM usuarios u
         JOIN usuarios_roles ur ON u.idusuario = ur.idusuario
         WHERE ur.idrol != 1
     ");
-    $totalIngresos = $stmt->fetchColumn();
+    $totalIngresos = $stmt->fetchColumn(); // Guardar el resultado en la variable
 
-    // Obtener el número de usuarios suscritos por mes con el rol de usuario (idRol = 2)
+    // Consulta para obtener el número de usuarios suscritos por mes con el rol de usuario
     $stmt = $conn->query("
         SELECT 
             MONTH(u.fecharegistro) as mes,
@@ -49,22 +66,24 @@ try {
         WHERE ur.idrol = 2
         GROUP BY MONTH(u.fecharegistro)
     ");
-    $suscripcionesMensuales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $suscripcionesMensuales = $stmt->fetchAll(PDO::FETCH_ASSOC); // Guardar los resultados en un array
 
     // Calcular ingresos mensuales basados en los usuarios suscritos
-    $ingresosMensuales = array_fill(0, 12, 0);
     foreach ($suscripcionesMensuales as $suscripcion) {
         $mes = $suscripcion['mes'] - 1; // Ajustar el mes para que sea de 0 a 11
         $ingresosMensuales[$mes] = $suscripcion['suscritos'] * (106 / 12); // Ingresos mensuales por suscripción
     }
 
 } catch (PDOException $e) {
+    // Mostrar mensaje de error en caso de fallo
     echo "Error: " . $e->getMessage();
 }
 
+// Incluir el encabezado del administrador
 include '../includes/header_admin.php';
 ?>
 
+<!-- Contenido de la página -->
 <div class="admin d-flex" id="wrapper" style="min-height: 100vh; overflow-x: hidden;">
     <!-- Sidebar -->
     <div class="bg-dark border-right" id="sidebar-wrapper" style="width: 150px;">
@@ -75,12 +94,12 @@ include '../includes/header_admin.php';
             <a href="ver_productos.php" class="list-group-item list-group-item-action bg-dark text-white">Productos</a>
             <a href="estadistica_productos.php" class="list-group-item list-group-item-action bg-dark text-white">Estadística</a>
             <a href="verificar_dni.php" class="list-group-item list-group-item-action bg-dark text-white">Verificar DNI</a>
-            <a href="modificartablas.php" class="list-group-item list-group-item-action bg-dark text-white">Modificar BD</a>
+          
             <a href="logout.php" class="list-group-item list-group-item-action bg-dark text-white">Cerrar Sesión</a>
         </div>
     </div>
 
-    <!-- Contenido de la página -->
+    <!-- Contenido principal -->
     <main id="page-content-wrapper" class="flex-grow-1 d-flex flex-column" style="min-width: 0;">
         <div class="container mt-5">
             <h2>Dashboard</h2>
@@ -90,7 +109,6 @@ include '../includes/header_admin.php';
                         <div class="card-header bg-danger text-white">Usuarios</div>
                         <div class="card-body">
                             <h5 class="card-title text-white"><?php echo $totalUsuarios; ?></h5>
-                          
                         </div>
                     </div>
                 </div>
@@ -117,7 +135,6 @@ include '../includes/header_admin.php';
                         <div class="card-header bg-danger text-white">Ingresos Totales</div>
                         <div class="card-body">
                             <h5 class="card-title text-white">€<?php echo number_format($totalIngresos, 2); ?></h5>
-                          
                         </div>
                     </div>
                 </div>
@@ -129,43 +146,32 @@ include '../includes/header_admin.php';
             </div>
         </div>
     </main>
-    <!-- /#page-content-wrapper -->
 </div>
-<!-- /#wrapper -->
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Toggle the side navigation
-    $("#menu-toggle").click(function(e) {
-        e.preventDefault();
-        $("#wrapper").toggleClass("toggled");
-    });
-
-    // Chart.js para ingresos mensuales
-    const ctx = document.getElementById('ingresosMensualesChart').getContext('2d');
-    const ingresosMensualesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-            datasets: [{
-                label: 'Ingresos Mensuales (€)',
-                data: <?php echo json_encode($ingresosMensuales); ?>,
-                backgroundColor: 'rgba(220, 53, 69, 0.5)',
-                borderColor: 'rgba(220, 53, 69, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+    $(document).ready(function () {
+        // Chart.js para ingresos mensuales
+        const ctx = document.getElementById('ingresosMensualesChart').getContext('2d');
+        const ingresosMensualesChart = new Chart(ctx, {
+            type: 'bar', // Tipo de gráfico: barra
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'], // Etiquetas del eje X
+                datasets: [{
+                    label: 'Ingresos Mensuales (€)', // Etiqueta del conjunto de datos
+                    data: <?php echo json_encode($ingresosMensuales); ?>, // Datos del conjunto de datos, convertidos de PHP a JSON
+                    backgroundColor: 'rgba(220, 53, 69, 0.5)', // Color de fondo de las barras (con transparencia)
+                    borderColor: 'rgba(220, 53, 69, 1)', // Color del borde de las barras
+                    borderWidth: 1 // Ancho del borde de las barras
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true // El eje Y comienza en cero
+                    }
                 }
             }
-        }
+        });
     });
 </script>
 

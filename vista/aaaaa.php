@@ -2,7 +2,7 @@
 session_start();
 require_once '../config/conexion.php';
 
-// Verificar si el usuario es un administrador
+// Verifica si el usuario ha iniciado sesión y es administrador
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
     header('Location: login.php');
     exit();
@@ -11,117 +11,123 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
 $database = new Database();
 $conn = $database->getConnection();
 
-// Eliminar usuario si se ha enviado una solicitud POST
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['idUsuario'])) {
-    $idUsuario = $_POST['idUsuario'];
+$queryCategorias = "SELECT * FROM categorias";
+$stmtCategorias = $conn->prepare($queryCategorias);
+$stmtCategorias->execute();
+$categorias = $stmtCategorias->fetchAll(PDO::FETCH_ASSOC);
 
-    // Verificar la conexión a la base de datos
-    if ($conn) {
-        try {
-            // Iniciar una transacción
-            $conn->beginTransaction();
-
-            // Eliminar el usuario de las tablas dependientes
-            $query = "DELETE FROM usuarios_roles WHERE idUsuario = :idUsuario";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':idUsuario', $idUsuario);
-            $stmt->execute();
-
-            $query = "DELETE FROM valoraciones WHERE idValorado = :idUsuario OR idValorador = :idUsuario";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':idUsuario', $idUsuario);
-            $stmt->execute();
-
-            $query = "DELETE FROM validaciondni WHERE idUsuario = :idUsuario";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':idUsuario', $idUsuario);
-            $stmt->execute();
-
-            // Eliminar el usuario
-            $query = "DELETE FROM usuarios WHERE idUsuario = :idUsuario";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':idUsuario', $idUsuario);
-            $stmt->execute();
-
-            // Confirmar la transacción
-            $conn->commit();
-
-            // Mensaje de éxito
-            $mensaje = "Usuario eliminado con éxito.";
-        } catch (PDOException $e) {
-            // Revertir la transacción en caso de error
-            if ($conn->inTransaction()) {
-                $conn->rollBack();
-            }
-            error_log("Error: " . $e->getMessage());
-            $error = "No se pudo eliminar el usuario.";
-        }
-    } else {
-        error_log("Error: No se pudo establecer la conexión con la base de datos.");
-        $error = "No se pudo establecer la conexión con la base de datos.";
-    }
-}
-
-// Obtener todos los usuarios
-if ($conn) {
-    $query = "SELECT idUsuario, nombreUsuario, email, nombre, apellidos1, apellidos2 FROM usuarios";
-    $stmt = $conn->prepare($query);
-
-    if ($stmt->execute()) {
-        $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } else {
-        $usuarios = [];
-        error_log("Error: No se pudo ejecutar la consulta.");
-    }
-} else {
-    $usuarios = [];
-    error_log("Error: No se pudo establecer la conexión con la base de datos.");
-}
+$queryUsuarios = "SELECT * FROM usuarios";
+$stmtUsuarios = $conn->prepare($queryUsuarios);
+$stmtUsuarios->execute();
+$usuarios = $stmtUsuarios->fetchAll(PDO::FETCH_ASSOC);
 
 include '../includes/header.php';
 ?>
 
-<main class="container mt-5">
-    <h2 class="text-center mb-4">Listado de Usuarios</h2>
-    <?php if (isset($mensaje)): ?>
-        <div class="alert alert-success text-center"><?php echo htmlspecialchars($mensaje); ?></div>
-    <?php endif; ?>
-    <?php if (isset($error)): ?>
-        <div class="alert alert-danger text-center"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($usuarios)): ?>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre de Usuario</th>
-                    <th>Email</th>
-                    <th>Nombre</th>
-                    <th>Apellidos</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($usuarios as $usuario): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($usuario['idUsuario'] ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($usuario['nombreUsuario'] ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($usuario['email'] ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars(($usuario['apellidos1'] ?? '') . ' ' . ($usuario['apellidos2'] ?? '')); ?></td>
-                        <td>
-                            <form action="aaaaa.php" method="post" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este usuario?');">
-                                <input type="hidden" name="idUsuario" value="<?php echo $usuario['idUsuario']; ?>">
-                                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                            </form>
-                        </td>
-                    </tr>
+<div class="container mt-5">
+    <h2 class="text-center text-danger">Subir Productos</h2>
+    <form action="subir_productos.php" method="POST" enctype="multipart/form-data">
+        <div id="productos-container">
+            <div class="producto mb-4 p-4 border">
+                <div class="form-group">
+                    <label for="nombreProducto1">Nombre del Producto</label>
+                    <input type="text" class="form-control" id="nombreProducto1" name="nombreProducto[]" required>
+                </div>
+                <div class="form-group">
+                    <label for="talla1">Talla</label>
+                    <input type="text" class="form-control" id="talla1" name="talla[]" required>
+                </div>
+                <div class="form-group">
+                    <label for="descripcion1">Descripción</label>
+                    <textarea class="form-control" id="descripcion1" name="descripcion[]" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="precio1">Precio (€)</label>
+                    <input type="number" class="form-control" id="precio1" name="precio[]" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="condicion1">Condición</label>
+                    <input type="text" class="form-control" id="condicion1" name="condicion[]" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoria1">Categoría</label>
+                    <select class="form-control" id="categoria1" name="idCategoria[]" required>
+                        <?php foreach ($categorias as $categoria): ?>
+                            <option value="<?= $categoria['idCategoria'] ?>"><?= $categoria['nombreCategoria'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="usuario1">Usuario</label>
+                    <select class="form-control" id="usuario1" name="idUsuario[]" required>
+                        <?php foreach ($usuarios as $usuario): ?>
+                            <option value="<?= $usuario['idUsuario'] ?>"><?= $usuario['nombreUsuario'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fotos1">Fotos del Producto</label>
+                    <input type="file" class="form-control" id="fotos1" name="fotos1[]" multiple required>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-secondary mb-4" id="agregarProducto">Agregar otro producto</button>
+        <button type="submit" class="btn btn-danger">Subir Productos</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('agregarProducto').addEventListener('click', function() {
+    var productosContainer = document.getElementById('productos-container');
+    var productosCount = productosContainer.getElementsByClassName('producto').length;
+    var productoIndex = productosCount + 1;
+
+    var productoDiv = document.createElement('div');
+    productoDiv.className = 'producto mb-4 p-4 border';
+    productoDiv.innerHTML = `
+        <div class="form-group">
+            <label for="nombreProducto${productoIndex}">Nombre del Producto</label>
+            <input type="text" class="form-control" id="nombreProducto${productoIndex}" name="nombreProducto[]" required>
+        </div>
+        <div class="form-group">
+            <label for="talla${productoIndex}">Talla</label>
+            <input type="text" class="form-control" id="talla${productoIndex}" name="talla[]" required>
+        </div>
+        <div class="form-group">
+            <label for="descripcion${productoIndex}">Descripción</label>
+            <textarea class="form-control" id="descripcion${productoIndex}" name="descripcion[]" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="precio${productoIndex}">Precio (€)</label>
+            <input type="number" class="form-control" id="precio${productoIndex}" name="precio[]" step="0.01" required>
+        </div>
+        <div class="form-group">
+            <label for="condicion${productoIndex}">Condición</label>
+            <input type="text" class="form-control" id="condicion${productoIndex}" name="condicion[]" required>
+        </div>
+        <div class="form-group">
+            <label for="categoria${productoIndex}">Categoría</label>
+            <select class="form-control" id="categoria${productoIndex}" name="idCategoria[]" required>
+                <?php foreach ($categorias as $categoria): ?>
+                    <option value="<?= $categoria['idCategoria'] ?>"><?= $categoria['nombreCategoria'] ?></option>
                 <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php else: ?>
-        <p class="text-center text-danger">No se encontraron usuarios.</p>
-    <?php endif; ?>
-</main>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="usuario${productoIndex}">Usuario</label>
+            <select class="form-control" id="usuario${productoIndex}" name="idUsuario[]" required>
+                <?php foreach ($usuarios as $usuario): ?>
+                    <option value="<?= $usuario['idUsuario'] ?>"><?= $usuario['nombreUsuario'] ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="fotos${productoIndex}">Fotos del Producto</label>
+            <input type="file" class="form-control" id="fotos${productoIndex}" name="fotos${productoIndex}[]" multiple required>
+        </div>
+    `;
+    productosContainer.appendChild(productoDiv);
+});
+</script>
 
 <?php include '../includes/footer.php'; ?>

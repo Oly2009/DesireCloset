@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="./assets/css/style.css" rel="stylesheet">
+   
 </head>
 <body>
 
@@ -17,9 +18,9 @@
         <div class="col-lg-12 col-md-10 col-sm-12">
             <div class="card custom-card bg-black text-center">
                 <div class="card-body">
-                    <img src="./assets/img/logo.jpg" alt="Logo" class="mb-3" style="width: 100px;">
+                    <img src="./assets/img/logo.jpg" alt="Logo" class="mb-3 fixed-image">
                     <h1 class="card-title text-danger">¿Eres mayor de edad?</h1>
-                    <p class="text-danger mb-4"> Por favor, introduce tu fecha de nacimiento para continuar.</p>
+                    <p class="text-danger mb-4">Por favor, introduce tu fecha de nacimiento para continuar.</p>
                     <form id="ageForm" action="vista/principal.php" method="POST">
                         <div class="row mb-3 text-danger">
                             <div class="col">
@@ -32,7 +33,7 @@
                             </div>
                             <div class="col">
                                 <label for="fecha_anio" class="form-label text-danger">Año:</label>
-                                <input type="number" class="form-control" id="fecha_anio" name="fecha_anio" min="1900" max="<?php echo date('Y');?>" required>
+                                <input type="number" class="form-control" id="fecha_anio" name="fecha_anio" min="1900" max="<?php echo date('Y'); ?>" required>
                             </div>
                         </div>
                         <button type="button" onclick="validarEdad()" class="btn btn-danger">Comprobar</button>
@@ -44,7 +45,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
@@ -70,15 +70,24 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Oops...',
-                text: 'La fecha de nacimiento no está comprendida en el rango permitido.\n\
-       Rango permitido 1900-actualidad'
+                text: 'La fecha de nacimiento no está comprendida en el rango permitido.\nRango permitido 1900-actualidad'
             });
             return; // Detener la ejecución de la función si la fecha está fuera del rango
         }
 
+        // Verificar si el día y el mes son válidos
+        if (!isValidDate(dia, mes, anio)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'La fecha ingresada no es válida.'
+            });
+            return;
+        }
+
         var fechaNacimiento = new Date(anio, mes - 1, dia);
         var fechaHoy = new Date();
-        
+
         // Comprobar si la fecha de nacimiento es después de la fecha de hoy
         if (fechaNacimiento > fechaHoy) {
             Swal.fire({
@@ -93,12 +102,12 @@
         var edad = fechaHoy.getFullYear() - fechaNacimiento.getFullYear();
         var mesCumple = fechaNacimiento.getMonth() + 1;
         var diaCumple = fechaNacimiento.getDate();
-        
+
         // Verificar si ya ha pasado el cumpleaños este año
         if (mesCumple > fechaHoy.getMonth() + 1 || (mesCumple === fechaHoy.getMonth() + 1 && diaCumple > fechaHoy.getDate())) {
             edad--;
         }
-        
+
         // Verificar si es mayor de 18 años
         if (edad < 18) {
             Swal.fire({
@@ -111,6 +120,20 @@
             document.getElementById("ageForm").submit();
         }
     }
+
+    // Función para verificar si una fecha es válida
+    function isValidDate(dia, mes, anio) {
+        var fecha = new Date(anio, mes - 1, dia);
+        return fecha.getFullYear() === anio && fecha.getMonth() + 1 === mes && fecha.getDate() === dia;
+    }
+
+    // Permitir envío de formulario al presionar Enter
+    document.getElementById("ageForm").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            validarEdad();
+        }
+    });
 </script>
 </body>
 </html>

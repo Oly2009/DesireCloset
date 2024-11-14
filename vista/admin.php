@@ -85,16 +85,17 @@ include '../includes/header_admin.php';
 
 <!-- Contenido de la página -->
 <div class="admin d-flex" id="wrapper" style="min-height: 100vh; overflow-x: hidden;">
-    <!-- Sidebar -->
+
+    
     <div class="bg-dark border-right" id="sidebar-wrapper" style="width: 150px;">
-        <div class="sidebar-heading text-white">DesireCloset Admin</div>
+        
         <div class="list-group list-group-flush">
             <a href="admin.php" class="list-group-item list-group-item-action bg-dark text-white">Dashboard</a>
             <a href="ver_usuarios.php" class="list-group-item list-group-item-action bg-dark text-white">Usuarios</a>
             <a href="ver_productos.php" class="list-group-item list-group-item-action bg-dark text-white">Productos</a>
             <a href="estadistica_productos.php" class="list-group-item list-group-item-action bg-dark text-white">Estadística</a>
             <a href="verificar_dni.php" class="list-group-item list-group-item-action bg-dark text-white">Verificar DNI</a>
-          
+           
             <a href="logout.php" class="list-group-item list-group-item-action bg-dark text-white">Cerrar Sesión</a>
         </div>
     </div>

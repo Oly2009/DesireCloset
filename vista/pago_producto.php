@@ -7,76 +7,90 @@ if (!isset($_GET['id'])) {
     exit();
 }
 
-$productId = $_GET['id'];
-$userId = $_SESSION['user_id'];
+$idProducto = $_GET['id'];
+$idUsuario = $_SESSION['user_id'];
 
 $database = new Database();
 $db = $database->getConnection();
 
-// Fetch product details and category details
+// Obtener detalles del producto y categoría
 $query = "SELECT p.*, c.nombreCategoria
           FROM productos p
           JOIN categorias c ON p.idCategoria = c.idCategoria
           WHERE p.idProducto = ?";
 $stmt = $db->prepare($query);
-$stmt->execute([$productId]);
-$product = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->execute([$idProducto]);
+$producto = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$product) {
+if (!$producto) {
     echo 'Producto no encontrado.';
     exit();
 }
 
-// Fetch buyer details
-$userQuery = "SELECT nombre, apellidos1, apellidos2, email FROM usuarios WHERE idUsuario = ?";
-$userStmt = $db->prepare($userQuery);
-$userStmt->execute([$userId]);
-$buyer = $userStmt->fetch(PDO::FETCH_ASSOC);
+// Obtener detalles del comprador
+$queryUsuario = "SELECT nombre, apellidos1, apellidos2, email FROM usuarios WHERE idUsuario = ?";
+$stmtUsuario = $db->prepare($queryUsuario);
+$stmtUsuario->execute([$idUsuario]);
+$comprador = $stmtUsuario->fetch(PDO::FETCH_ASSOC);
 
-// Determine category page based on the category name
-$categoryPage = '';
-switch ($product['nombreCategoria']) {
+// Determinar la página de categoría basada en el nombre de la categoría
+$paginaCategoria = '';
+switch ($producto['nombreCategoria']) {
     case 'Bragas y Tangas':
-        $categoryPage = 'braga.php';
+        $paginaCategoria = 'braga.php';
         break;
     case 'Sujetadores':
-        $categoryPage = 'sujetadores.php';
+        $paginaCategoria = 'sujetadores.php';
         break;
     case 'Fotos de pies':
-        $categoryPage = 'fotosdepie.php';
+        $paginaCategoria = 'fotosdepie.php';
         break;
     case 'Juguetes sexuales':
-        $categoryPage = 'juguetessexuales.php';
+        $paginaCategoria = 'juguetessexuales.php';
         break;
     default:
-        $categoryPage = 'todos.php';
+        $paginaCategoria = 'todos.php';
         break;
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['pay'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['pagar'])) {
     try {
         $db->beginTransaction();
-        
-        // Update transaction status
-        $updateQuery = "UPDATE transacciones SET idComprador = ?, estado = 'comprado', fechaTransaccion = CURDATE(), hora = CURTIME() WHERE idProducto = ? AND estado = 'enventa'";
-        $updateStmt = $db->prepare($updateQuery);
-        $updateStmt->execute([$userId, $productId]);
-        
-        // Set the product as sold
-        $soldQuery = "UPDATE transacciones SET estado = 'vendido' WHERE idProducto = ? AND idVendedor = ?";
-        $soldStmt = $db->prepare($soldQuery);
-        $soldStmt->execute([$productId, $product['idUsuario']]);
-        
-        $db->commit();
-        
-        $successMessage = "Producto comprado con éxito!";
+
+        // Aquí llamamos a la función que simula el pago con PayPal
+        $resultadoPago = procesarPagoConPaypal($idUsuario, $idProducto, $producto['precio']);
+
+        if ($resultadoPago == 1) {
+            // Actualizar estado de la transacción
+            $queryActualizar = "UPDATE transacciones SET idComprador = ?, estado = 'comprado', fechaTransaccion = CURDATE(), hora = CURTIME() WHERE idProducto = ? AND estado = 'enventa'";
+            $stmtActualizar = $db->prepare($queryActualizar);
+            $stmtActualizar->execute([$idUsuario, $idProducto]);
+
+            // Establecer el producto como vendido
+            $queryVendido = "UPDATE transacciones SET estado = 'vendido' WHERE idProducto = ? AND idVendedor = ?";
+            $stmtVendido = $db->prepare($queryVendido);
+            $stmtVendido->execute([$idProducto, $producto['idUsuario']]);
+
+            $db->commit();
+            $mensajeExito = "Producto comprado con éxito!";
+        } else {
+            $db->rollBack();
+            $mensajeError = "El pago no se pudo realizar.";
+        }
     } catch (Exception $e) {
         $db->rollBack();
-        $errorMessage = "Error al actualizar el estado de la transacción: " . $e->getMessage();
+        $mensajeError = "Error al actualizar el estado de la transacción: " . $e->getMessage();
     }
 }
 
-include '../includes/header.php'; 
+include '../includes/header.php';
+
+// Función simulada para procesar el pago con PayPal
+function procesarPagoConPaypal($idUsuario, $idProducto, $monto) {
+    // Aquí se simula el resultado del pago. En una integración real, aquí se haría la llamada a la API de PayPal.
+    // Por ahora, simplemente devolvemos 1 para simular un pago exitoso.
+    return 1;
+}
 ?>
 
 <div class="container mt-5">
@@ -88,8 +102,8 @@ include '../includes/header.php';
                     Información del Comprador
                 </div>
                 <div class="card-body">
-                    <p><strong>Nombre:</strong> <?php echo htmlspecialchars($buyer['nombre'] . ' ' . $buyer['apellidos1'] . ' ' . $buyer['apellidos2']); ?></p>
-                    <p><strong>Email:</strong> <?php echo htmlspecialchars($buyer['email']); ?></p>
+                    <p><strong>Nombre:</strong> <?php echo htmlspecialchars($comprador['nombre'] . ' ' . $comprador['apellidos1'] . ' ' . $comprador['apellidos2']); ?></p>
+                    <p><strong>Email:</strong> <?php echo htmlspecialchars($comprador['email']); ?></p>
                 </div>
             </div>
             <div class="card">
@@ -97,8 +111,8 @@ include '../includes/header.php';
                     Detalles del Producto
                 </div>
                 <div class="card-body">
-                    <p><strong>Nombre del Producto:</strong> <?php echo htmlspecialchars($product['nombreProducto']); ?></p>
-                    <p><strong>Precio:</strong> €<?php echo htmlspecialchars($product['precio']); ?></p>
+                    <p><strong>Nombre del Producto:</strong> <?php echo htmlspecialchars($producto['nombreProducto']); ?></p>
+                    <p><strong>Precio:</strong> €<?php echo htmlspecialchars($producto['precio']); ?></p>
                 </div>
             </div>
         </div>
@@ -106,23 +120,23 @@ include '../includes/header.php';
             <div class="card">
                 <div class="card-header text-center">
                     Información de Pago
-                    <button type="button" class="btn-close" aria-label="Close" onclick="window.location.href='<?php echo $categoryPage; ?>'" style="position: absolute; right: 15px;"></button>
+                    <button type="button" class="btn-close" aria-label="Close" onclick="window.location.href='<?php echo $paginaCategoria; ?>'" style="position: absolute; right: 15px;"></button>
                 </div>
                 <div class="card-body">
-                    <form method="post" id="paymentForm">
+                    <form method="post" id="formularioPago">
                         <div class="mb-3">
-                            <label for="cardNumber" class="form-label">Número de Tarjeta</label>
-                            <input type="text" class="form-control" id="cardNumber" name="cardNumber" maxlength="19" placeholder="XXXX XXXX XXXX XXXX" required>
+                            <label for="numeroTarjeta" class="form-label">Número de Tarjeta</label>
+                            <input type="text" class="form-control" id="numeroTarjeta" name="numeroTarjeta" maxlength="19" placeholder="XXXX XXXX XXXX XXXX" required>
                             <div class="invalid-feedback">Por favor, ingrese un número de tarjeta válido (16 dígitos).</div>
                         </div>
                         <div class="mb-3">
-                            <label for="cardName" class="form-label">Nombre en la Tarjeta</label>
-                            <input type="text" class="form-control" id="cardName" name="cardName" placeholder="Nombre Completo" required>
+                            <label for="nombreTarjeta" class="form-label">Nombre en la Tarjeta</label>
+                            <input type="text" class="form-control" id="nombreTarjeta" name="nombreTarjeta" placeholder="Nombre Completo" required>
                             <div class="invalid-feedback">Por favor, ingrese el nombre tal como aparece en la tarjeta.</div>
                         </div>
                         <div class="mb-3">
-                            <label for="expiryDate" class="form-label">Fecha de Expiración</label>
-                            <input type="text" class="form-control" id="expiryDate" name="expiryDate" placeholder="MM/YY" required>
+                            <label for="fechaExpiracion" class="form-label">Fecha de Expiración</label>
+                            <input type="text" class="form-control" id="fechaExpiracion" name="fechaExpiracion" placeholder="MM/YY" required>
                             <div class="invalid-feedback">Por favor, ingrese una fecha de expiración válida (MM/YY).</div>
                         </div>
                         <div class="mb-3">
@@ -131,24 +145,24 @@ include '../includes/header.php';
                             <div class="invalid-feedback">Por favor, ingrese un CVV válido (3 o 4 dígitos).</div>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" name="pay" class="btn btn-primary">Pagar</button>
+                            <button type="submit" name="pagar" class="btn btn-primary">Pagar</button>
                         </div>
                     </form>
-                    <?php if (isset($successMessage)): ?>
-                        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                    <?php if (isset($mensajeExito)): ?>
+                      
                         <script>
                             Swal.fire({
                                 title: 'Éxito',
-                                text: "<?php echo $successMessage; ?>",
+                                text: "<?php echo $mensajeExito; ?>",
                                 icon: 'success',
                                 confirmButtonText: 'OK'
                             }).then(() => {
-                                window.location.href = "<?php echo $categoryPage; ?>";
+                                window.location.href = "<?php echo $paginaCategoria; ?>";
                             });
                         </script>
                     <?php endif; ?>
-                    <?php if (isset($errorMessage)): ?>
-                        <div class="alert alert-danger mt-3"><?php echo $errorMessage; ?></div>
+                    <?php if (isset($mensajeError)): ?>
+                        <div class="alert alert-danger mt-3"><?php echo $mensajeError; ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -159,29 +173,29 @@ include '../includes/header.php';
 <?php include '../includes/footer.php'; ?>
 
 <script>
-document.getElementById('paymentForm').addEventListener('submit', function(event) {
-    var cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
-    var cardName = document.getElementById('cardName').value;
-    var expiryDate = document.getElementById('expiryDate').value;
+document.getElementById('formularioPago').addEventListener('submit', function(event) {
+    var numeroTarjeta = document.getElementById('numeroTarjeta').value.replace(/\s+/g, '');
+    var nombreTarjeta = document.getElementById('nombreTarjeta').value;
+    var fechaExpiracion = document.getElementById('fechaExpiracion').value;
     var cvv = document.getElementById('cvv').value;
 
-    var cardNumberRegex = /^\d{16}$/;
-    var expiryDateRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
-    var cvvRegex = /^\d{3,4}$/;
+    var regexNumeroTarjeta = /^\d{16}$/;
+    var regexFechaExpiracion = /^(0[1-9]|1[0-2])\/\d{2}$/;
+    var regexCVV = /^\d{3,4}$/;
 
-    if (!cardNumberRegex.test(cardNumber)) {
+    if (!regexNumeroTarjeta.test(numeroTarjeta)) {
         event.preventDefault();
         Swal.fire('Error', 'Número de tarjeta inválido', 'error');
         return;
     }
 
-    if (!expiryDateRegex.test(expiryDate)) {
+    if (!regexFechaExpiracion.test(fechaExpiracion)) {
         event.preventDefault();
         Swal.fire('Error', 'Fecha de expiración inválida', 'error');
         return;
     }
 
-    if (!cvvRegex.test(cvv)) {
+    if (!regexCVV.test(cvv)) {
         event.preventDefault();
         Swal.fire('Error', 'CVV inválido', 'error');
         return;

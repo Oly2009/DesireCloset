@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = 'localhost';
-    private $port = '3306';  // Agregar el puerto de la base de datos
+    private $port = '3306'; 
     private $db_name = 'DesireCloset';
     private $username = 'oly';
     private $password = '';

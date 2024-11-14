@@ -74,7 +74,7 @@ include '../includes/header_admin.php';
 <div class="admin d-flex" id="wrapper" style="min-height: 100vh; overflow-x: hidden;">
     <!-- Sidebar -->
     <div class="bg-dark border-right" id="sidebar-wrapper" style="width: 150px;">
-        <div class="sidebar-heading text-white">DesireCloset Admin</div>
+        
         <div class="list-group list-group-flush">
             <a href="admin.php" class="list-group-item list-group-item-action bg-dark text-white">Dashboard</a>
             <a href="ver_usuarios.php" class="list-group-item list-group-item-action bg-dark text-white">Usuarios</a>

@@ -86,6 +86,7 @@ CREATE TABLE mensajes (
     idReceptor INT,
     idProducto INT,
     contenido VARCHAR(255),
+    visto INT,
     FOREIGN KEY (idEmisor) REFERENCES Usuarios(idUsuario),
     FOREIGN KEY (idReceptor) REFERENCES Usuarios(idUsuario),
     FOREIGN KEY (idProducto) REFERENCES Productos(idProducto)

@@ -12,6 +12,22 @@ $isAdmin = $isLoggedIn && isset($_SESSION['role']) && $_SESSION['role'] == 'admi
 
 // Obtener el nombre del archivo actual para activar el enlace correspondiente en la barra de navegación
 $current_file = basename($_SERVER['PHP_SELF']);
+
+// Conectar a la base de datos para obtener la cantidad de mensajes no leídos
+$mensajesNuevos = 0;
+if ($isLoggedIn) {
+    require_once '../config/conexion.php';
+    $database = new Database();
+    $conn = $database->getConnection();
+
+    try {
+        $stmt = $conn->prepare("SELECT COUNT(*) as mensajesNuevos FROM mensajes WHERE idReceptor = ? AND leido = 0");
+        $stmt->execute([$_SESSION['user_id']]);
+        $mensajesNuevos = $stmt->fetch(PDO::FETCH_ASSOC)['mensajesNuevos'];
+    } catch (Exception $e) {
+        $mensajesNuevos = 0;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -24,8 +40,6 @@ $current_file = basename($_SERVER['PHP_SELF']);
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-   
-
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -51,6 +65,13 @@ $current_file = basename($_SERVER['PHP_SELF']);
                     </form>
                     <!-- Enlaces de usuario -->
                     <ul class="navbar-nav d-flex flex-row">
+                        <?php if ($isLoggedIn): ?>
+                            <li class="nav-item"><a class="nav-link text-danger me-3" href="../vista/chat.php"><i class="fas fa-comments fa-lg"></i>
+                                <?php if ($mensajesNuevos > 0): ?>
+                                    <span class="badge bg-danger"><?php echo $mensajesNuevos; ?></span>
+                                <?php endif; ?>
+                            </a></li>
+                        <?php endif; ?>
                         <li class="nav-item"><a class="nav-link text-danger me-3" href="../vista/miperfil.php"><i class="fas fa-user fa-lg"></i></a></li>
                         <?php if ($isLoggedIn): ?>
                             <!-- Menú desplegable para usuarios autenticados -->
@@ -60,12 +81,14 @@ $current_file = basename($_SERVER['PHP_SELF']);
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <li><a class="dropdown-item" href="editar_perfil.php"><i class="fas fa-pencil-alt"></i> Editar perfil</a></li>
+                                    <?php if (!$isAdmin): // Mostrar opción de borrar solo si no es administrador ?>
                                     <li>
                                         <form action="borrar_perfil.php" method="post">
                                             <input type="hidden" name="confirm_delete" value="yes">
                                             <button type="submit" class="dropdown-item"><i class="fas fa-trash-alt"></i> Borrar perfil</button>
                                         </form>
                                     </li>
+                                    <?php endif; ?>
                                     <li><a class="dropdown-item" href="verInformacion.php"><i class="fas fa-info-circle"></i> Ver información</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
@@ -102,3 +125,5 @@ $current_file = basename($_SERVER['PHP_SELF']);
             </div>
         </div>
     </nav>
+</body>
+</html>

@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="./assets/css/style.css" rel="stylesheet">
-   
 </head>
 <body>
 
@@ -18,7 +17,7 @@
         <div class="col-lg-12 col-md-10 col-sm-12">
             <div class="card custom-card bg-black text-center">
                 <div class="card-body">
-                    <img src="./assets/img/logo.jpg" alt="Logo" class="mb-3 fixed-image">
+                    <img src="./assets/img/logo.jpg" alt="Logo" class="mb-3" style="width: 100px;">
                     <h1 class="card-title text-danger">¿Eres mayor de edad?</h1>
                     <p class="text-danger mb-4">Por favor, introduce tu fecha de nacimiento para continuar.</p>
                     <form id="ageForm" action="vista/principal.php" method="POST">

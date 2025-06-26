@@ -43,27 +43,23 @@ if ($isLoggedIn) {
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <header class="py-3" style="background-color: #000000;">
+    <header class="py-2" style="background-color: #000000;">
         <div class="header container">
             <div class="row align-items-center justify-content-between">
-                <!-- Logo y Título del sitio -->
                 <div class="col-lg-8 d-flex align-items-center">
                     <a href="#" class="navbar-brand">
-                        <img src="../assets/img/logo.jpg" alt="Logo de DesireCloset" class="logo" style="width:100px;">
+                        <img src="../assets/img/logo.jpg" alt="Logo de DesireCloset" class="logo" style="width:80px;">
                     </a>
                     <div class="ms-2">
-                        <h2 class="text-danger display-6 mb-0">DesireCloset</h2>
+                        <h2 class="text-danger mb-0">DesireCloset</h2>
                         <h5 class="text-danger text-center display-10 mb-0">Conectando Fantasías</h5>
                     </div>
                 </div>
-                <!-- Barra de búsqueda y enlaces de usuario -->
                 <div class="col-lg-4 d-flex align-items-center justify-content-end">
-                    <!-- Barra de búsqueda -->
                     <form class="d-flex me-3" action="../vista/busqueda.php" method="GET">
                         <input class="form-control me-2" type="search" name="busqueda" placeholder="Buscar" aria-label="Buscar">
                         <button type="submit" class="btn btn-danger"><i class="fas fa-search"></i></button>
                     </form>
-                    <!-- Enlaces de usuario -->
                     <ul class="navbar-nav d-flex flex-row">
                         <?php if ($isLoggedIn): ?>
                             <li class="nav-item"><a class="nav-link text-danger me-3" href="../vista/chat.php"><i class="fas fa-comments fa-lg"></i>
@@ -74,17 +70,18 @@ if ($isLoggedIn) {
                         <?php endif; ?>
                         <li class="nav-item"><a class="nav-link text-danger me-3" href="../vista/miperfil.php"><i class="fas fa-user fa-lg"></i></a></li>
                         <?php if ($isLoggedIn): ?>
-                            <!-- Menú desplegable para usuarios autenticados -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link text-danger dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-cog fa-lg"></i>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <li><a class="dropdown-item" href="editar_perfil.php"><i class="fas fa-pencil-alt"></i> Editar perfil</a></li>
+                                    
+                                    <li><a class="dropdown-item" href="establecer_contrasena.php"><i class="fas fa-key"></i> Cambiar contraseña</a></li>
+                                    
                                     <?php if (!$isAdmin): // Mostrar opción de borrar solo si no es administrador ?>
                                     <li>
-                                        <form action="borrar_perfil.php" method="post">
-                                            <input type="hidden" name="confirm_delete" value="yes">
+                                        <form action="borrar_perfil.php" method="post" onsubmit="return confirm('¿Estás seguro de que quieres borrar tu perfil? Esta acción no se puede deshacer.');">
                                             <button type="submit" class="dropdown-item"><i class="fas fa-trash-alt"></i> Borrar perfil</button>
                                         </form>
                                     </li>
@@ -92,8 +89,8 @@ if ($isLoggedIn) {
                                     <li><a class="dropdown-item" href="verInformacion.php"><i class="fas fa-info-circle"></i> Ver información</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <form action="../vista/logout.php" method="post" class="dropdown-item p-0">
-                                            <button type="submit" class="btn btn-link text-danger p-0 m-0"><i class="fas fa-sign-out-alt fa-lg"></i> Cerrar sesión</button>
+                                        <form action="../vista/logout.php" method="post">
+                                            <button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
                                         </form>
                                     </li>
                                 </ul>
@@ -104,7 +101,6 @@ if ($isLoggedIn) {
             </div>
         </div>
     </header>
-    <!-- Barra de navegación principal -->
     <nav class="navbar navbar-expand-lg navbar-light bg-danger">
         <div class="container">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
